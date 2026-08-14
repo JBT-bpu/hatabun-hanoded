@@ -1,349 +1,360 @@
-const whatsappHref =
-  "https://wa.me/972544669111?text=%D7%94%D7%99%D7%99%20%D7%94%D7%98%D7%90%D7%91%D7%95%D7%9F%20%D7%94%D7%A0%D7%95%D7%93%D7%93%2C%20%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%A7%D7%91%D7%9C%20%D7%94%D7%A6%D7%A2%D7%94%20%D7%9C%D7%90%D7%99%D7%A8%D7%95%D7%A2";
+"use client";
 
-const menuGroups = [
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+
+const whatsappBase = "https://wa.me/972544669111?text=";
+
+const stages = [
   {
-    label: "01 / הבסיס",
-    title: "פוקאצ׳ות. חמות. עכשיו.",
-    description:
-      "בצק שנכנס לעיני האורחים ויוצא מהטאבון ישר להגשה — עם רטבים, צבע וטקסטורה.",
-    items: [
-      "זעתר ושמן זית",
-      "עגבניות",
-      "פסטו",
-      "טפנד זיתים",
-      "אנטיפסטי",
-    ],
-    tone: "light",
+    number: "01",
+    tab: "מגיעים",
+    label: "הבמה נפתחת",
+    title: "נכנסים עם נוכחות.",
+    text: "הטאבון לא מתחבא מאחורי הקלעים. הוא מגיע אל מרכז האירוע, מוכן להפוך לעמדה שכולם רואים.",
+    word: "הטאבון",
   },
   {
-    label: "02 / השדרוג",
-    title: "הכיוון שלכם. החלבי או הבשרי.",
-    description:
-      "בונים את העמדה סביב האופי של האירוע, עם אפשרויות שדרוג ותוספות שנבחרות יחד.",
-    items: [
-      "מוצרלה",
-      "בולגרית",
-      "צפתית",
-      "שווארמה",
-      "בשר טחון",
-    ],
-    tone: "ember",
+    number: "02",
+    tab: "מדליקים",
+    label: "הרגע משתנה",
+    title: "אש אמיתית. בזמן אמת.",
+    text: "הלהבה עולה, האבן מתחממת והריח מתחיל לעבוד. זה הרגע שבו האורחים מתקרבים מעצמם.",
+    word: "האש",
+  },
+  {
+    number: "03",
+    tab: "מגישים",
+    label: "הביס הראשון",
+    title: "מהטאבון ישר ליד.",
+    text: "פוקאצ׳ות יוצאות חמות מול העיניים, עם הרטבים והתוספות שבחרתם לאירוע.",
+    word: "עכשיו",
   },
 ];
+
+const menus = {
+  dairy: {
+    label: "חלבי",
+    title: "קרמי, רענן, לוהט.",
+    options: ["מוצרלה", "בולגרית", "צפתית", "פסטו", "אנטיפסטי", "זיתים"],
+  },
+  meat: {
+    label: "בשרי",
+    title: "עמוק, עסיסי, מהאש.",
+    options: ["שווארמה", "בשר טחון", "חצילים", "בצל סגול", "חריף", "טפנד"],
+  },
+};
 
 const faqs = [
-  {
-    question: "העמדה חלבית או בשרית?",
-    answer:
-      "אפשר להתאים את עמדת הטאבון לאירוע חלבי או בשרי. בשיחה הראשונה נבין את הכיוון ונתאים את האפשרויות לאירוע שלכם.",
-  },
-  {
-    question: "הטאבון הוא האוכל המרכזי או עמדה נוספת?",
-    answer:
-      "הטאבון יכול להוביל את קבלת הפנים או המסיבה, ויכול גם להשתלב כעמדה חמה לצד עמדות נוספות.",
-  },
-  {
-    question: "איפה אפשר להקים את העמדה?",
-    answer:
-      "בבית פרטי, בחיק הטבע, באולם או בגן אירועים. ספרו לנו איפה חוגגים ונבדוק יחד את ההתאמה למקום.",
-  },
-  {
-    question: "איך מקבלים הצעת מחיר?",
-    answer:
-      "שולחים לנו בוואטסאפ תאריך, מיקום וכמה מילים על האירוע — או מתקשרים לאהרון. משם נבנה את ההצעה המתאימה.",
-  },
-  {
-    question: "מה לגבי כשרות או אלרגנים?",
-    answer:
-      "את פרטי הכשרות, חומרי הגלם והאלרגנים חשוב לברר ישירות מול הצוות לפני ההזמנה, בהתאם לתפריט הנבחר.",
-  },
+  ["חלבי או בשרי?", "שני הכיוונים אפשריים. בשיחה הראשונה בוחרים את האופי והתוספות שמתאימים לאירוע."],
+  ["איפה מקימים?", "בבית, בטבע, באולם או בגן אירועים. ספרו לנו על הלוקיישן ונבדוק את ההתאמה."],
+  ["עמדה מרכזית או תוספת?", "אפשר לבנות את הטאבון כמרכז קבלת הפנים או לשלב אותו לצד עמדות נוספות."],
+  ["איך מקבלים הצעה?", "שולחים תאריך, מיקום וכמה מילים על האירוע בוואטסאפ — ואנחנו ממשיכים משם."],
 ];
 
-export default function Home() {
+function BrandEmblem({ compact = false }: { compact?: boolean }) {
   return (
-    <main id="top">
-      <a className="skip-link" href="#content">
-        דילוג לתוכן
-      </a>
+    <span className={`emblem ${compact ? "emblem-compact" : ""}`} aria-hidden="true">
+      <span className="emblem-arch">
+        <span className="css-flame"><i /></span>
+      </span>
+      <span className="emblem-line" />
+    </span>
+  );
+}
 
-      <section className="hero" aria-labelledby="hero-title">
-        <div className="hero-media" aria-hidden="true">
-          <img src="/hero-fire.png" alt="" />
-        </div>
-        <div className="hero-shade" aria-hidden="true" />
+export default function Home() {
+  const [lit, setLit] = useState(true);
+  const [activeStage, setActiveStage] = useState(1);
+  const [menuMode, setMenuMode] = useState<keyof typeof menus>("dairy");
+  const [selected, setSelected] = useState<string[]>(["מוצרלה", "פסטו", "אנטיפסטי"]);
+  const heroRef = useRef<HTMLElement>(null);
+  const menu = menus[menuMode];
 
-        <header className="site-header">
-          <a className="brand" href="#top" aria-label="הטאבון הנודד — לדף הבית">
-            <span className="brand-mark">אש</span>
-            <span className="brand-name">
-              <strong>הטאבון</strong>
-              <small>הנודד</small>
-            </span>
-          </a>
+  useEffect(() => {
+    const root = document.documentElement;
+    const updateScroll = () => {
+      const max = document.body.scrollHeight - window.innerHeight;
+      root.style.setProperty("--scroll", max > 0 ? String(window.scrollY / max) : "0");
+    };
+    updateScroll();
+    window.addEventListener("scroll", updateScroll, { passive: true });
 
-          <nav className="main-nav" aria-label="ניווט ראשי">
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach((entry) => entry.target.classList.toggle("is-visible", entry.isIntersecting)),
+      { threshold: 0.14 },
+    );
+    document.querySelectorAll("[data-reveal]").forEach((element) => observer.observe(element));
+
+    return () => {
+      window.removeEventListener("scroll", updateScroll);
+      observer.disconnect();
+    };
+  }, []);
+
+  const menuHref = useMemo(() => {
+    const choice = selected.length ? selected.join(", ") : "לבחירה משותפת";
+    return `${whatsappBase}${encodeURIComponent(`היי הטאבון הנודד, אשמח להצעה לאירוע. הכיוון שמעניין אותי: ${menu.label}. תוספות: ${choice}`)}`;
+  }, [menu.label, selected]);
+
+  const mainWhatsapp = `${whatsappBase}${encodeURIComponent("היי הטאבון הנודד, אשמח לקבל הצעה לאירוע")}`;
+
+  function moveHeat(event: React.PointerEvent<HTMLElement>) {
+    const element = heroRef.current;
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width;
+    const y = (event.clientY - rect.top) / rect.height;
+    element.style.setProperty("--mx", `${event.clientX - rect.left}px`);
+    element.style.setProperty("--my", `${event.clientY - rect.top}px`);
+    element.style.setProperty("--px", String(x - 0.5));
+    element.style.setProperty("--py", String(y - 0.5));
+  }
+
+  function chooseMode(mode: keyof typeof menus) {
+    setMenuMode(mode);
+    setSelected(menus[mode].options.slice(0, 3));
+  }
+
+  function toggleIngredient(item: string) {
+    setSelected((current) =>
+      current.includes(item) ? current.filter((value) => value !== item) : [...current, item],
+    );
+  }
+
+  return (
+    <main className={lit ? "site-is-lit" : "site-is-dim"}>
+      <a className="skip-link" href="#experience">דילוג לתוכן</a>
+      <div className="scroll-progress" aria-hidden="true" />
+
+      <section
+        ref={heroRef}
+        className="poster-hero"
+        id="top"
+        onPointerMove={moveHeat}
+        aria-labelledby="hero-title"
+      >
+        <header className="poster-nav">
+          <p><span>TLV</span> / טאבון נייד לאירועים</p>
+          <nav aria-label="ניווט ראשי">
             <a href="#experience">החוויה</a>
-            <a href="#menu">מה אוכלים</a>
-            <a href="#events">לאן מגיעים</a>
-            <a href="#faq">שאלות</a>
+            <a href="#menu">התפריט</a>
+            <a href="#events">אירועים</a>
           </nav>
-
-          <a className="header-contact" href={whatsappHref} target="_blank" rel="noreferrer">
-            קבלו הצעה <span aria-hidden="true">↙</span>
-          </a>
+          <a href="tel:+972544669111"><bdi>054-4669-111</bdi> / אהרון</a>
         </header>
 
-        <div className="hero-inner">
-          <div className="hero-copy">
-            <p className="eyebrow"><span /> טאבון נייד לאירועים</p>
-            <h1 id="hero-title">
-              האש נדלקת.
-              <em>האירוע מתחיל.</em>
-            </h1>
-            <p className="hero-lead">
-              פוקאצ׳ות נאפות מול האורחים — חם, טרי ובלתי אפשרי להתעלם. זה לא רק אוכל. זה השואו שלכם.
+        <div className="poster-photo" aria-label="טאבון נייד בוער באירוע ערב">
+          <img src="/hero-fire.png" alt="טאבון נייד בוער ופוקאצ׳ה יוצאת אל אורחי האירוע" />
+          <div className="photo-vignette" aria-hidden="true" />
+          <div className="heat-cursor" aria-hidden="true" />
+          <div className="sparks" aria-hidden="true">
+            {Array.from({ length: 14 }, (_, index) => (
+              <i key={index} style={{ "--i": index } as CSSProperties} />
+            ))}
+          </div>
+          <p className="photo-stamp"><span>LIVE FIRE</span> / <b>01</b></p>
+        </div>
+
+        <div className="poster-copy">
+          <div className="poster-copy-inner">
+            <BrandEmblem />
+            <p className="poster-edition">מהדורת אירועים / 2026</p>
+            <h1 id="hero-title">הטאבון הנודד</h1>
+            <div className="brand-strike" aria-hidden="true" />
+            <p className="poster-slogan">
+              <span>האש נדלקת.</span>
+              <strong>האירוע מתחיל.</strong>
             </p>
-            <div className="hero-actions">
-              <a className="button button-primary" href={whatsappHref} target="_blank" rel="noreferrer">
-                בואו נדליק אירוע <span aria-hidden="true">←</span>
+            <p className="poster-body">
+              טאבון שמגיע אליכם, נדלק מול האורחים ומוציא פוקאצ׳ות חמות בדיוק כשהערב מתחיל לזוז.
+            </p>
+            <div className="poster-actions">
+              <a className="poster-cta" href={mainWhatsapp} target="_blank" rel="noreferrer">
+                <span>הצעה לאירוע</span><i aria-hidden="true">↙</i>
               </a>
-              <a className="button button-quiet" href="tel:+972544669111">
-                דברו עם אהרון <bdi>054-4669-111</bdi>
-              </a>
+              <a className="poster-text-link" href="#experience">כנסו לחוויה <span aria-hidden="true">↓</span></a>
             </div>
           </div>
+        </div>
 
-          <p className="hero-signature" aria-hidden="true">
-            תיאטרון <span>האש</span>
-          </p>
+        <button
+          className="ignition"
+          type="button"
+          aria-pressed={lit}
+          onClick={() => setLit((value) => !value)}
+        >
+          <span className="ignition-core"><i /></span>
+          <b>{lit ? "בוער" : "הדליקו"}</b>
+          <small>{lit ? "לחצו לכיבוי" : "לחצו לאש"}</small>
+        </button>
+
+        <div className="poster-ticker" aria-label="יתרונות">
+          <div>
+            <span>נאפה במקום</span><i>◆</i><span>חלבי או בשרי</span><i>◆</i>
+            <span>מול האורחים</span><i>◆</i><span>לבית, לטבע ולאולם</span><i>◆</i>
+            <span>נאפה במקום</span><i>◆</i><span>חלבי או בשרי</span><i>◆</i>
+          </div>
         </div>
       </section>
 
-      <div className="proof-strip" aria-label="יתרונות עיקריים">
-        <span><i aria-hidden="true">●</i> נאפה במקום</span>
-        <span><i aria-hidden="true">●</i> חלבי או בשרי</span>
-        <span><i aria-hidden="true">●</i> לבית, לטבע, לאולם או לגן</span>
-      </div>
+      <section className="theater section-dark" id="experience" aria-labelledby="experience-title">
+        <div className="section-index" data-reveal>
+          <span>01</span><i /> <p>תיאטרון האש</p>
+        </div>
+        <header className="editorial-heading" data-reveal>
+          <p>לא עוד “עמדת אוכל”</p>
+          <h2 id="experience-title">שלושה רגעים.<br /><em>שואו אחד.</em></h2>
+        </header>
 
-      <div id="content">
-        <section className="experience section" id="experience" aria-labelledby="experience-title">
-          <div className="section-kicker">
-            <span>01</span>
-            <p>החוויה</p>
-          </div>
-
-          <div className="experience-grid">
-            <div className="experience-copy">
-              <p className="overline">לא עוד עמדת אוכל</p>
-              <h2 id="experience-title">
-                זה הרגע שבו כולם <em>מתקרבים.</em>
-              </h2>
-              <p className="large-copy">
-                הטאבון מגיע, האש עולה והבצק מתחיל לזוז. הריח מתפזר לפני הביס הראשון — ופתאום יש לאירוע מרכז חי, חם ומסקרן.
-              </p>
-              <a className="text-link" href="#how-it-works">
-                ככה זה קורה <span aria-hidden="true">←</span>
-              </a>
-            </div>
-
-            <div className="oven-portal">
-              <div className="portal-glow" aria-hidden="true" />
-              <div className="portal-image">
-                <img src="/hero-fire.png" alt="טאבון בוער ופוקאצ׳ה חמה מוגשת באירוע" />
-              </div>
-              <p className="portal-note"><span>LIVE</span> נאפה מול האורחים</p>
-            </div>
-          </div>
-
-          <div className="moments-grid">
-            <article className="moment-card">
-              <span className="moment-number">01</span>
-              <h3>מגיעים</h3>
-              <p>מקימים עמדת טאבון שמרגישה חלק מהאירוע, לא תוספת מהצד.</p>
-            </article>
-            <article className="moment-card moment-featured">
-              <span className="moment-number">02</span>
-              <h3>מדליקים</h3>
-              <p>האש, החום והריח פותחים את התיאבון ומושכים את כולם פנימה.</p>
-            </article>
-            <article className="moment-card">
-              <span className="moment-number">03</span>
-              <h3>אופים</h3>
-              <p>הפוקאצ׳ות יוצאות חמות, עם שילובים שנבחרו לערב שלכם.</p>
-            </article>
-          </div>
-        </section>
-
-        <section className="menu-section section" id="menu" aria-labelledby="menu-title">
-          <div className="menu-header">
-            <div className="section-kicker section-kicker-light">
-              <span>02</span>
-              <p>מה אוכלים</p>
-            </div>
-            <div>
-              <p className="overline">מה יוצא מהטאבון?</p>
-              <h2 id="menu-title">חם. צבעוני. בלי לחכות.</h2>
-            </div>
-            <p className="menu-intro">
-              מתחילים מפוקאצ׳ה לוהטת ומרכיבים סביבה תפריט שמתאים לאופי של האירוע.
-            </p>
-          </div>
-
-          <div className="menu-grid">
-            {menuGroups.map((group) => (
-              <article className={`menu-card menu-card-${group.tone}`} key={group.label}>
-                <p className="menu-label">{group.label}</p>
-                <h3>{group.title}</h3>
-                <p>{group.description}</p>
-                <ul aria-label={`אפשרויות עבור ${group.title}`}>
-                  {group.items.map((item) => <li key={item}>{item}</li>)}
-                </ul>
-              </article>
+        <div className="stage-shell" data-reveal>
+          <div className="stage-tabs" role="tablist" aria-label="שלבי החוויה">
+            {stages.map((stage, index) => (
+              <button
+                key={stage.number}
+                type="button"
+                role="tab"
+                aria-selected={activeStage === index}
+                onClick={() => setActiveStage(index)}
+              >
+                <span>{stage.number}</span>
+                <b>{stage.tab}</b>
+                <i aria-hidden="true" />
+              </button>
             ))}
           </div>
 
-          <div className="menu-callout">
-            <p>יש לכם כיוון משלכם?</p>
-            <a href={whatsappHref} target="_blank" rel="noreferrer">
-              בואו נבנה את התפריט יחד <span aria-hidden="true">←</span>
-            </a>
-          </div>
-        </section>
-
-        <section className="events-section section" id="events" aria-labelledby="events-title">
-          <div className="events-heading">
-            <div className="section-kicker">
-              <span>03</span>
-              <p>לאן מגיעים</p>
+          <div className="stage-display" role="tabpanel" key={stages[activeStage].number}>
+            <div className="stage-copy">
+              <p>{stages[activeStage].label}</p>
+              <h3>{stages[activeStage].title}</h3>
+              <span>{stages[activeStage].text}</span>
             </div>
-            <p className="overline">הטאבון מגיע לרגע שלכם</p>
-            <h2 id="events-title">אתם בוחרים איפה. אנחנו מביאים את החום.</h2>
-          </div>
-
-          <div className="event-panels">
-            <article className="event-panel event-home">
-              <span>01</span>
-              <div>
-                <p>קרוב ואישי</p>
-                <h3>בבית</h3>
+            <div className="stage-visual" aria-hidden="true">
+              <span className="stage-word">{stages[activeStage].word}</span>
+              <div className="stage-arch">
+                <img src="/hero-fire.png" alt="" />
+                <div className="stage-flare" />
               </div>
-            </article>
-            <article className="event-panel event-nature">
-              <span>02</span>
-              <div>
-                <p>פתוח ובלתי נשכח</p>
-                <h3>בטבע</h3>
-              </div>
-            </article>
-            <article className="event-panel event-venue">
-              <span>03</span>
-              <div>
-                <p>עמדה עם נוכחות</p>
-                <h3>באולם או בגן</h3>
-              </div>
-            </article>
-          </div>
-
-          <p className="events-note">
-            קבלת פנים, יום הולדת, מסיבה או ערב מיוחד — ספרו לנו איפה חוגגים ונבדוק את ההתאמה לאירוע.
-          </p>
-        </section>
-
-        <section className="process-section section" id="how-it-works" aria-labelledby="process-title">
-          <div className="process-intro">
-            <div className="section-kicker section-kicker-light">
-              <span>04</span>
-              <p>איך זה עובד</p>
+              <p>LIVE / {stages[activeStage].number}</p>
             </div>
-            <p className="overline">פשוט מתחילים לדבר</p>
-            <h2 id="process-title">מהשיחה הראשונה עד הפוקאצ׳ה החמה.</h2>
           </div>
+        </div>
+      </section>
 
-          <ol className="process-list">
-            <li>
-              <span>01</span>
-              <div><h3>מספרים</h3><p>תאריך, מיקום ומה אתם מתכננים.</p></div>
-            </li>
-            <li>
-              <span>02</span>
-              <div><h3>מתאימים</h3><p>כיוון חלבי או בשרי והאפשרויות לערב.</p></div>
-            </li>
-            <li>
-              <span>03</span>
-              <div><h3>סוגרים</h3><p>מקבלים הצעה ברורה לפי פרטי האירוע.</p></div>
-            </li>
-            <li>
-              <span>04</span>
-              <div><h3>מדליקים</h3><p>נפגשים באירוע ואופים מול האורחים.</p></div>
-            </li>
-          </ol>
-        </section>
-
-        <section className="faq-section section" id="faq" aria-labelledby="faq-title">
-          <div className="faq-heading">
-            <div className="section-kicker">
-              <span>05</span>
-              <p>כדאי לדעת</p>
-            </div>
-            <p className="overline">שאלות שמגיעות לפני האש</p>
-            <h2 id="faq-title">שאלתם. פתחנו.</h2>
-          </div>
-
-          <div className="faq-list">
-            {faqs.map((faq, index) => (
-              <details key={faq.question}>
-                <summary>
-                  <span className="faq-index">0{index + 1}</span>
-                  <span>{faq.question}</span>
-                  <i aria-hidden="true">+</i>
-                </summary>
-                <p>{faq.answer}</p>
-              </details>
+      <section className="menu-lab" id="menu" aria-labelledby="menu-title">
+        <div className="menu-photo" data-reveal>
+          <img src="/hero-fire.png" alt="פוקאצ׳ה חמה ליד טאבון בוער" />
+          <div className="menu-photo-shade" aria-hidden="true" />
+          <p className="menu-photo-title">בונים את הביס.</p>
+          <div className="chosen-orbit" aria-live="polite">
+            {selected.slice(0, 5).map((item, index) => (
+              <span key={item} style={{ "--pos": index } as CSSProperties}>{item}</span>
             ))}
           </div>
-        </section>
+          <span className="menu-counter"><bdi>{String(selected.length).padStart(2, "0")}</bdi> / תוספות</span>
+        </div>
 
-        <section className="closing" aria-labelledby="closing-title">
-          <div className="closing-image" aria-hidden="true">
-            <img src="/hero-fire.png" alt="" />
+        <div className="menu-console" data-reveal>
+          <div className="section-index section-index-dark"><span>02</span><i /><p>המעבדה</p></div>
+          <p className="console-kicker">בחרו כיוון. שחקו עם האש.</p>
+          <h2 id="menu-title">מה יוצא<br />מהטאבון?</h2>
+          <div className="mode-switch" role="tablist" aria-label="סוג התפריט">
+            {(Object.keys(menus) as Array<keyof typeof menus>).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                role="tab"
+                aria-selected={menuMode === mode}
+                onClick={() => chooseMode(mode)}
+              >
+                {menus[mode].label}
+              </button>
+            ))}
           </div>
-          <div className="closing-shade" aria-hidden="true" />
-          <div className="closing-content">
-            <p className="eyebrow"><span /> מוכנים לחמם את האירוע?</p>
-            <h2 id="closing-title">האירוע שלכם.<br /><em>האש שלנו.</em></h2>
-            <p>שלחו לנו תאריך, מיקום וכמה מילים על מה שאתם מתכננים. נמשיך משם.</p>
-            <div className="closing-actions">
-              <a className="button button-primary" href={whatsappHref} target="_blank" rel="noreferrer">
-                הצעה בוואטסאפ <span aria-hidden="true">←</span>
-              </a>
-              <a className="button button-outline" href="tel:+972544669111">
-                חייגו לאהרון <bdi>054-4669-111</bdi>
-              </a>
-            </div>
+          <p className="menu-direction" key={menuMode}>{menu.title}</p>
+          <div className="ingredient-grid" aria-label="בחירת תוספות">
+            {menu.options.map((item) => (
+              <button
+                type="button"
+                key={item}
+                className={selected.includes(item) ? "is-selected" : ""}
+                aria-pressed={selected.includes(item)}
+                onClick={() => toggleIngredient(item)}
+              >
+                <span>{selected.includes(item) ? "−" : "+"}</span>{item}
+              </button>
+            ))}
           </div>
-        </section>
-      </div>
+          <a className="menu-submit" href={menuHref} target="_blank" rel="noreferrer">
+            שלחו את הכיוון לוואטסאפ <span aria-hidden="true">↙</span>
+          </a>
+          <small>הבחירה כאן היא השראה — את התפריט הסופי סוגרים יחד.</small>
+        </div>
+      </section>
 
-      <footer className="site-footer">
-        <div className="footer-brand">
-          <span className="brand-mark">אש</span>
-          <p><strong>הטאבון הנודד</strong><br />תיאטרון אש נייד לאירועים</p>
+      <section className="events section-dark" id="events" aria-labelledby="events-title">
+        <div className="section-index" data-reveal><span>03</span><i /><p>הלוקיישן שלכם</p></div>
+        <header className="events-heading" data-reveal>
+          <h2 id="events-title">אנחנו מביאים<br /><em>את הלהבה.</em></h2>
+          <p>אתם רק בוחרים איפה היא נדלקת.</p>
+        </header>
+        <div className="events-grid" data-reveal>
+          <article className="event-card">
+            <span>01</span><p>קרוב / אישי</p><h3>בבית</h3><i>↙</i>
+          </article>
+          <article className="event-card event-card-orange">
+            <span>02</span><p>פתוח / פראי</p><h3>בטבע</h3><i>↙</i>
+          </article>
+          <article className="event-card event-card-cream">
+            <span>03</span><p>מדויק / מרשים</p><h3>באולם<br />או בגן</h3><i>↙</i>
+          </article>
         </div>
-        <div className="footer-contact">
-          <a href="tel:+972544669111">אהרון <bdi>054-4669-111</bdi></a>
-          <a href="tel:+972544669112">מור <bdi>054-4669-112</bdi></a>
-          <a href="mailto:hatabunhanoded@gmail.com">hatabunhanoded@gmail.com</a>
+      </section>
+
+      <section className="answers" id="faq" aria-labelledby="faq-title">
+        <div className="answers-intro" data-reveal>
+          <div className="section-index section-index-dark"><span>04</span><i /><p>לפני שמדליקים</p></div>
+          <h2 id="faq-title">קצר.<br />לעניין.<br /><em>חם.</em></h2>
+          <a href="tel:+972544669111">יש עוד שאלה? <b>דברו איתנו</b></a>
         </div>
-        <div className="footer-meta">
-          <span>תל אביב</span>
-          <span>© {new Date().getFullYear()} הטאבון הנודד</span>
+        <div className="answer-list" data-reveal>
+          {faqs.map(([question, answer], index) => (
+            <details key={question}>
+              <summary><span>0{index + 1}</span><b>{question}</b><i>+</i></summary>
+              <p>{answer}</p>
+            </details>
+          ))}
         </div>
+      </section>
+
+      <section className="final-poster" aria-labelledby="final-title">
+        <div className="final-black">
+          <BrandEmblem />
+          <p>הטאבון הנודד</p>
+          <h2 id="final-title">האש<br />מחכה.</h2>
+        </div>
+        <div className="final-orange">
+          <p>יש תאריך? יש לוקיישן?<br />מכאן זה כבר מתחמם.</p>
+          <a href={mainWhatsapp} target="_blank" rel="noreferrer">
+            <span>בואו נדליק אירוע</span><i>↙</i>
+          </a>
+          <div className="final-contacts">
+            <a href="tel:+972544669111">אהרון / <bdi>054-4669-111</bdi></a>
+            <a href="tel:+972544669112">מור / <bdi>054-4669-112</bdi></a>
+            <a href="mailto:hatabunhanoded@gmail.com">hatabunhanoded@gmail.com</a>
+          </div>
+        </div>
+      </section>
+
+      <footer className="poster-footer">
+        <span>תל אביב / ישראל</span>
+        <span>© {new Date().getFullYear()} הטאבון הנודד</span>
+        <a href="#top">חזרה לאש ↑</a>
       </footer>
 
-      <div className="mobile-actions" aria-label="יצירת קשר מהירה">
-        <a className="mobile-whatsapp" href={whatsappHref} target="_blank" rel="noreferrer">WhatsApp</a>
-        <a className="mobile-call" href="tel:+972544669111">חייגו</a>
+      <div className="mobile-bar">
+        <a href={mainWhatsapp} target="_blank" rel="noreferrer">WhatsApp</a>
+        <a href="tel:+972544669111">חייגו</a>
       </div>
     </main>
   );
