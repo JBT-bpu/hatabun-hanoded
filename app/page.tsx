@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import EmberField from "./EmberField";
 
 const whatsappBase = "https://wa.me/972544669111?text=";
 
@@ -63,11 +64,12 @@ function BrandEmblem({ compact = false }: { compact?: boolean }) {
 }
 
 export default function Home() {
-  const [lit, setLit] = useState(true);
+  const [lit, setLit] = useState(false);
   const [activeStage, setActiveStage] = useState(1);
   const [menuMode, setMenuMode] = useState<keyof typeof menus>("dairy");
   const [selected, setSelected] = useState<string[]>(["מוצרלה", "פסטו", "אנטיפסטי"]);
   const heroRef = useRef<HTMLElement>(null);
+  const ignitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menu = menus[menuMode];
 
   useEffect(() => {
@@ -88,6 +90,18 @@ export default function Home() {
     return () => {
       window.removeEventListener("scroll", updateScroll);
       observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setLit(true);
+      return;
+    }
+
+    ignitionTimerRef.current = setTimeout(() => setLit(true), 620);
+    return () => {
+      if (ignitionTimerRef.current) clearTimeout(ignitionTimerRef.current);
     };
   }, []);
 
@@ -121,8 +135,17 @@ export default function Home() {
     );
   }
 
+  function toggleFire() {
+    if (ignitionTimerRef.current) {
+      clearTimeout(ignitionTimerRef.current);
+      ignitionTimerRef.current = null;
+    }
+    setLit((value) => !value);
+  }
+
   return (
     <main className={lit ? "site-is-lit" : "site-is-dim"}>
+      <EmberField lit={lit} />
       <a className="skip-link" href="#experience">דילוג לתוכן</a>
       <div className="scroll-progress" aria-hidden="true" />
 
@@ -132,6 +155,7 @@ export default function Home() {
         id="top"
         onPointerMove={moveHeat}
         aria-labelledby="hero-title"
+        data-ember-zone
       >
         <header className="poster-nav">
           <p><span>TLV</span> / טאבון נייד לאירועים</p>
@@ -143,15 +167,16 @@ export default function Home() {
           <a href="tel:+972544669111"><bdi>054-4669-111</bdi> / אהרון</a>
         </header>
 
-        <div className="poster-photo" aria-label="טאבון נייד בוער באירוע ערב">
+        <div
+          className="poster-photo"
+          aria-label="טאבון נייד בוער באירוע ערב"
+          data-ember-source="hero"
+          data-ember-x="0.36"
+          data-ember-y="0.57"
+        >
           <img src="/hero-fire.png" alt="טאבון נייד בוער ופוקאצ׳ה יוצאת אל אורחי האירוע" />
           <div className="photo-vignette" aria-hidden="true" />
           <div className="heat-cursor" aria-hidden="true" />
-          <div className="sparks" aria-hidden="true">
-            {Array.from({ length: 14 }, (_, index) => (
-              <i key={index} style={{ "--i": index } as CSSProperties} />
-            ))}
-          </div>
           <p className="photo-stamp"><span>LIVE FIRE</span> / <b>01</b></p>
         </div>
 
@@ -169,7 +194,7 @@ export default function Home() {
               טאבון שמגיע אליכם, נדלק מול האורחים ומוציא פוקאצ׳ות חמות בדיוק כשהערב מתחיל לזוז.
             </p>
             <div className="poster-actions">
-              <a className="poster-cta" href={mainWhatsapp} target="_blank" rel="noreferrer">
+              <a className="poster-cta" href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="28" data-ember-target=".poster-photo">
                 <span>הצעה לאירוע</span><i aria-hidden="true">↙</i>
               </a>
               <a className="poster-text-link" href="#experience">כנסו לחוויה <span aria-hidden="true">↓</span></a>
@@ -181,7 +206,10 @@ export default function Home() {
           className="ignition"
           type="button"
           aria-pressed={lit}
-          onClick={() => setLit((value) => !value)}
+          aria-label={lit ? "כיבוי האש באתר" : "הדלקת האש באתר"}
+          onClick={toggleFire}
+          data-ember-burst="42"
+          data-ember-toggle="true"
         >
           <span className="ignition-core"><i /></span>
           <b>{lit ? "בוער" : "הדליקו"}</b>
@@ -197,7 +225,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="theater section-dark" id="experience" aria-labelledby="experience-title">
+      <section className="theater section-dark" id="experience" aria-labelledby="experience-title" data-ember-zone>
         <div className="section-index" data-reveal>
           <span>01</span><i /> <p>תיאטרון האש</p>
         </div>
@@ -215,6 +243,8 @@ export default function Home() {
                 role="tab"
                 aria-selected={activeStage === index}
                 onClick={() => setActiveStage(index)}
+                data-ember-burst="22"
+                data-ember-target=".stage-arch"
               >
                 <span>{stage.number}</span>
                 <b>{stage.tab}</b>
@@ -231,7 +261,7 @@ export default function Home() {
             </div>
             <div className="stage-visual" aria-hidden="true">
               <span className="stage-word">{stages[activeStage].word}</span>
-              <div className="stage-arch">
+              <div className="stage-arch" data-ember-source="stage" data-ember-x="0.34" data-ember-y="0.58">
                 <img src="/hero-fire.png" alt="" />
                 <div className="stage-flare" />
               </div>
@@ -242,7 +272,7 @@ export default function Home() {
       </section>
 
       <section className="menu-lab" id="menu" aria-labelledby="menu-title">
-        <div className="menu-photo" data-reveal>
+        <div className="menu-photo" data-reveal data-ember-zone data-ember-source="menu" data-ember-x="0.27" data-ember-y="0.53">
           <img src="/hero-fire.png" alt="פוקאצ׳ה חמה ליד טאבון בוער" />
           <div className="menu-photo-shade" aria-hidden="true" />
           <p className="menu-photo-title">בונים את הביס.</p>
@@ -266,6 +296,8 @@ export default function Home() {
                 role="tab"
                 aria-selected={menuMode === mode}
                 onClick={() => chooseMode(mode)}
+                data-ember-burst="16"
+                data-ember-target=".menu-photo"
               >
                 {menus[mode].label}
               </button>
@@ -280,6 +312,8 @@ export default function Home() {
                 className={selected.includes(item) ? "is-selected" : ""}
                 aria-pressed={selected.includes(item)}
                 onClick={() => toggleIngredient(item)}
+                data-ember-burst="7"
+                data-ember-target=".menu-photo"
               >
                 <span>{selected.includes(item) ? "−" : "+"}</span>{item}
               </button>
@@ -292,7 +326,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="events section-dark" id="events" aria-labelledby="events-title">
+      <section className="events section-dark" id="events" aria-labelledby="events-title" data-ember-zone>
         <div className="section-index" data-reveal><span>03</span><i /><p>הלוקיישן שלכם</p></div>
         <header className="events-heading" data-reveal>
           <h2 id="events-title">אנחנו מביאים<br /><em>את הלהבה.</em></h2>
@@ -328,14 +362,14 @@ export default function Home() {
       </section>
 
       <section className="final-poster" aria-labelledby="final-title">
-        <div className="final-black">
+        <div className="final-black" data-ember-zone data-ember-source="final" data-ember-arrival data-ember-x="0.5" data-ember-y="0.34">
           <BrandEmblem />
           <p>הטאבון הנודד</p>
           <h2 id="final-title">האש<br />מחכה.</h2>
         </div>
         <div className="final-orange">
           <p>יש תאריך? יש לוקיישן?<br />מכאן זה כבר מתחמם.</p>
-          <a href={mainWhatsapp} target="_blank" rel="noreferrer">
+          <a href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="32" data-ember-target=".final-black">
             <span>בואו נדליק אירוע</span><i>↙</i>
           </a>
           <div className="final-contacts">
@@ -346,7 +380,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="poster-footer">
+      <footer className="poster-footer" data-ember-zone>
         <span>תל אביב / ישראל</span>
         <span>© {new Date().getFullYear()} הטאבון הנודד</span>
         <a href="#top">חזרה לאש ↑</a>
