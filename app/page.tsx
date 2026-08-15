@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import EmberField from "./EmberField";
 import HeatHaze from "./HeatHaze";
 import LottieFlame from "./LottieFlame";
+import StoryCanvas from "./StoryCanvas";
 
 const whatsappBase = "https://wa.me/972544669111?text=";
 
@@ -54,6 +55,12 @@ const faqs = [
   ["איך מקבלים הצעה?", "שולחים תאריך, מיקום וכמה מילים על האירוע בוואטסאפ — ואנחנו ממשיכים משם."],
 ];
 
+const storyLayerStyle = (index: number) => ({
+  "--stage-alpha": `var(--stage-${index}-alpha)`,
+  "--stage-y": `var(--stage-${index}-y)`,
+  "--stage-blur": `var(--stage-${index}-blur)`,
+} as CSSProperties);
+
 function BrandEmblem({ compact = false }: { compact?: boolean }) {
   return (
     <span className={`emblem ${compact ? "emblem-compact" : ""}`} aria-hidden="true">
@@ -81,6 +88,11 @@ export default function Home() {
   useEffect(() => {
     const root = document.documentElement;
     const revealElements = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let storyTarget = 0;
+    let storyCurrent = 0;
+    let storyFrame = 0;
+    let storyInitialized = false;
 
     const revealInView = () => {
       revealElements.forEach((element) => {
@@ -90,15 +102,69 @@ export default function Home() {
       });
     };
 
+    const clamp = (value: number) => Math.min(1, Math.max(0, value));
+    const smootherstep = (start: number, end: number, value: number) => {
+      const amount = clamp((value - start) / (end - start));
+      return amount * amount * amount * (amount * (amount * 6 - 15) + 10);
+    };
+
+    const paintStory = (progress: number) => {
+      const shell = stageShellRef.current;
+      if (!shell) return;
+      const phaseOne = smootherstep(0.18, 0.36, progress);
+      const phaseTwo = smootherstep(0.64, 0.82, progress);
+      const weights = [1 - phaseOne, phaseOne * (1 - phaseTwo), phaseTwo];
+      const coordinate = phaseOne + phaseTwo;
+      const heat = Math.max(
+        4 * phaseOne * (1 - phaseOne),
+        4 * phaseTwo * (1 - phaseTwo),
+      );
+      const centers = [0.09, 0.5, 0.91];
+
+      shell.style.setProperty("--story-progress", String(progress));
+      shell.style.setProperty("--story-coordinate", String(coordinate));
+      shell.style.setProperty("--story-heat", String(heat));
+      shell.style.setProperty("--story-heat-opacity", String(0.06 + heat * 0.36));
+      shell.style.setProperty("--story-line", `${Math.max(0.01, progress) * 100}%`);
+      shell.style.setProperty("--story-heat-x", `${(1 - progress) * 100}%`);
+      shell.style.setProperty("--story-scan-y", `${-28 + progress * 150}%`);
+
+      weights.forEach((weight, index) => {
+        const distance = progress - centers[index];
+        shell.style.setProperty(`--stage-${index}-alpha`, String(weight));
+        shell.style.setProperty(`--stage-${index}-y`, `${distance * 42}px`);
+        shell.style.setProperty(`--stage-${index}-blur`, `${(1 - weight) * 4}px`);
+      });
+
+      const nextStage = weights.indexOf(Math.max(...weights));
+      setActiveStage((current) => current === nextStage ? current : nextStage);
+    };
+
+    const renderStory = () => {
+      storyFrame = 0;
+      const distance = storyTarget - storyCurrent;
+      storyCurrent = reducedMotion || Math.abs(distance) < 0.0005
+        ? storyTarget
+        : storyCurrent + distance * 0.14;
+      paintStory(storyCurrent);
+      if (Math.abs(storyTarget - storyCurrent) >= 0.0005) {
+        storyFrame = requestAnimationFrame(renderStory);
+      }
+    };
+
     const updateStory = () => {
       const shell = stageShellRef.current;
       if (!shell) return;
       const rect = shell.getBoundingClientRect();
       const travel = Math.max(1, rect.height - window.innerHeight);
-      const progress = Math.min(1, Math.max(0, -rect.top / travel));
-      const nextStage = Math.min(stages.length - 1, Math.floor(progress * stages.length));
-      shell.style.setProperty("--story-progress", String(progress));
-      setActiveStage((current) => current === nextStage ? current : nextStage);
+      storyTarget = clamp(-rect.top / travel);
+      if (!storyInitialized) {
+        storyCurrent = storyTarget;
+        storyInitialized = true;
+        paintStory(storyCurrent);
+        return;
+      }
+      if (!storyFrame) storyFrame = requestAnimationFrame(renderStory);
     };
 
     const updateScroll = () => {
@@ -127,6 +193,7 @@ export default function Home() {
     return () => {
       window.removeEventListener("scroll", updateScroll);
       window.removeEventListener("resize", updateScroll);
+      if (storyFrame) cancelAnimationFrame(storyFrame);
       observer?.disconnect();
     };
   }, []);
@@ -189,10 +256,22 @@ export default function Home() {
     }
     const top = window.scrollY + shell.getBoundingClientRect().top;
     const travel = Math.max(0, shell.offsetHeight - window.innerHeight);
-    const target = top + (index / Math.max(1, stages.length - 1)) * travel;
+    const centers = [0.09, 0.5, 0.91];
+    const target = top + centers[index] * travel;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     window.scrollTo({ top: target, behavior: reducedMotion ? "auto" : "smooth" });
-    setActiveStage(index);
+  }
+
+  function handleStageKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, index: number) {
+    let nextIndex: number | null = null;
+    if (event.key === "ArrowLeft") nextIndex = Math.min(stages.length - 1, index + 1);
+    if (event.key === "ArrowRight") nextIndex = Math.max(0, index - 1);
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = stages.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    document.getElementById(`story-tab-${nextIndex}`)?.focus();
+    goToStage(nextIndex);
   }
 
   return (
@@ -287,18 +366,22 @@ export default function Home() {
           <h2 id="experience-title">שלושה רגעים.<br /><em>שואו אחד.</em></h2>
         </header>
 
-        <div ref={stageShellRef} className="stage-shell story-scroll" data-reveal>
+        <div ref={stageShellRef} className="stage-shell story-scroll">
           <div className="stage-sticky">
-            <div className="stage-tabs" role="tablist" aria-label="שלבי החוויה">
+            <div className="stage-tabs" role="tablist" aria-label="שלבי החוויה" data-reveal>
               {stages.map((stage, index) => (
                 <button
                   key={stage.number}
+                  id={`story-tab-${index}`}
                   type="button"
                   role="tab"
                   aria-selected={activeStage === index}
+                  aria-controls={`story-panel-${index}`}
+                  tabIndex={activeStage === index ? 0 : -1}
                   onClick={() => goToStage(index)}
+                  onKeyDown={(event) => handleStageKeyDown(event, index)}
                   data-ember-burst="22"
-                  data-ember-target=".stage-arch"
+                  data-ember-target=".story-arch"
                 >
                   <span>{stage.number}</span>
                   <b>{stage.tab}</b>
@@ -307,30 +390,55 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="stage-display" role="tabpanel" key={stages[activeStage].number}>
-              <div className="stage-copy">
-                <p>{stages[activeStage].label}</p>
-                <h3>{stages[activeStage].title}</h3>
-                <span>{stages[activeStage].text}</span>
-                <div className="story-progress" aria-hidden="true">
-                  <i style={{ "--story-step": (activeStage + 1) / stages.length } as CSSProperties} />
-                  <b>{stages[activeStage].number} / 03</b>
-                </div>
+            <div className="stage-display">
+              <div className="stage-copy-stack">
+                {stages.map((stage, index) => (
+                  <article
+                    key={stage.number}
+                    id={`story-panel-${index}`}
+                    className="stage-copy stage-copy-panel"
+                    role="tabpanel"
+                    aria-labelledby={`story-tab-${index}`}
+                    aria-hidden={activeStage !== index}
+                    data-active={activeStage === index ? "true" : "false"}
+                    style={storyLayerStyle(index)}
+                  >
+                    <p>{stage.label}</p>
+                    <h3>{stage.title}</h3>
+                    <span>{stage.text}</span>
+                    <div className="story-progress" aria-hidden="true">
+                      <i />
+                      <b>{stage.number} / 03</b>
+                    </div>
+                  </article>
+                ))}
               </div>
+
               <div className="stage-visual" aria-hidden="true">
-                <span className="stage-word">{stages[activeStage].word}</span>
+                {stages.map((stage, index) => (
+                  <span
+                    key={stage.number}
+                    className="stage-word stage-word-layer"
+                    style={storyLayerStyle(index)}
+                  >
+                    {stage.word}
+                  </span>
+                ))}
                 <div
                   className="stage-arch story-arch"
                   data-ember-source="stage"
                   data-ember-x="0.5"
                   data-ember-y="0.48"
-                  style={{ "--story-position": `${activeStage * 50}%` } as CSSProperties}
                 >
-                  <div className="story-filmstrip" />
+                  <StoryCanvas />
                   <div className="stage-flare" />
                   <span className="story-scanline" />
                 </div>
-                <p>LIVE / {stages[activeStage].number}</p>
+                <p className="story-live-stack">
+                  {stages.map((stage, index) => (
+                    <span key={stage.number} style={storyLayerStyle(index)}>LIVE / {stage.number}</span>
+                  ))}
+                </p>
               </div>
             </div>
           </div>
