@@ -61,12 +61,16 @@ const storyLayerStyle = (index: number) => ({
   "--stage-blur": `var(--stage-${index}-blur)`,
 } as CSSProperties);
 
-function BrandEmblem({ compact = false }: { compact?: boolean }) {
+function BrandEmblem({ variant = "primary" }: { variant?: "primary" | "seal" }) {
+  const source = variant === "primary"
+    ? "/brand/brand-primary-logo.png"
+    : "/brand/brand-round-seal.png";
+
   return (
-    <span className={`emblem ${compact ? "emblem-compact" : ""}`} aria-hidden="true">
+    <span className={`emblem emblem-${variant}`} aria-hidden="true">
       <img
         className="emblem-crest"
-        src="/brand-book-crest-v1.png"
+        src={source}
         alt=""
         decoding="async"
       />
@@ -288,7 +292,9 @@ export default function Home() {
         data-ember-zone
       >
         <header className="poster-nav">
-          <p><span>TLV</span> / טאבון נייד לאירועים</p>
+          <a className="nav-brand" href="#top" aria-label="הטאבון הנודד — חזרה לראש העמוד">
+            <img src="/brand/brand-horizontal-logo.png" alt="" />
+          </a>
           <nav aria-label="ניווט ראשי">
             <a href="#experience">החוויה</a>
             <a href="#menu">התפריט</a>
@@ -316,7 +322,7 @@ export default function Home() {
             <div className="hero-brand-lockup">
               <BrandEmblem />
               <p className="poster-edition">מהדורת אירועים / 2026</p>
-              <h1 id="hero-title">הטאבון הנודד</h1>
+              <h1 id="hero-title" className="sr-only">הטאבון הנודד — טאבון נייד לאירועים</h1>
             </div>
             <div className="brand-strike" aria-hidden="true" />
             <p className="poster-slogan">
@@ -446,6 +452,22 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="brand-motif-rail" aria-label="סמלי המותג" data-reveal>
+        {[
+          ["/brand/icon-flame.png", "אש חיה"],
+          ["/brand/icon-wheat.png", "בצק טרי"],
+          ["/brand/icon-peel.png", "נאפה מולכם"],
+          ["/brand/icon-palm.png", "מגיעים לכל מקום"],
+          ["/brand/icon-oven.png", "הטאבון הנודד"],
+        ].map(([source, label], index) => (
+          <div className="brand-motif" key={source}>
+            <span>0{index + 1}</span>
+            <img src={source} alt="" aria-hidden="true" />
+            <p>{label}</p>
+          </div>
+        ))}
+      </section>
+
       <section className="menu-lab" id="menu" aria-labelledby="menu-title">
         <div className="menu-photo" data-reveal data-ember-zone data-ember-source="menu" data-ember-x="0.27" data-ember-y="0.53">
           <img src="/hero-fire.png" alt="פוקאצ׳ה חמה ליד טאבון בוער" />
@@ -504,8 +526,11 @@ export default function Home() {
       <section className="events section-dark" id="events" aria-labelledby="events-title" data-ember-zone>
         <div className="section-index" data-reveal><span>03</span><i /><p>הלוקיישן שלכם</p></div>
         <header className="events-heading" data-reveal>
-          <h2 id="events-title">אנחנו מביאים<br /><em>את הלהבה.</em></h2>
-          <p>אתם רק בוחרים איפה היא נדלקת.</p>
+          <div>
+            <h2 id="events-title">אנחנו מביאים<br /><em>את הלהבה.</em></h2>
+            <p>אתם רק בוחרים איפה היא נדלקת.</p>
+          </div>
+          <img className="events-brand-mark" src="/brand/brand-camel-oven-icon.png" alt="" aria-hidden="true" />
         </header>
         <div className="events-grid" data-reveal>
           <article className="event-card">
@@ -538,8 +563,8 @@ export default function Home() {
 
       <section className="final-poster" aria-labelledby="final-title">
         <div className="final-black" data-ember-zone data-ember-source="final" data-ember-arrival data-ember-x="0.5" data-ember-y="0.34">
-          <BrandEmblem />
-          <p>הטאבון הנודד</p>
+          <BrandEmblem variant="seal" />
+          <p>טאבון נייד לאירועים</p>
           <h2 id="final-title">האש<br />מחכה.</h2>
         </div>
         <div className="final-orange">
