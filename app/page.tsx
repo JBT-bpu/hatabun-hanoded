@@ -206,6 +206,13 @@ export default function Home() {
     const updateScroll = () => {
       const max = document.body.scrollHeight - window.innerHeight;
       root.style.setProperty("--scroll", max > 0 ? String(window.scrollY / max) : "0");
+      const hero = heroRef.current;
+      if (hero) {
+        const rect = hero.getBoundingClientRect();
+        const progress = clamp(-rect.top / Math.max(1, rect.height));
+        const parallax = reducedMotion ? 0 : 12 - progress * 24;
+        hero.style.setProperty("--hero-parallax-y", `${parallax}px`);
+      }
       revealInView();
       updateStory();
     };

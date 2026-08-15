@@ -141,6 +141,7 @@ h1, h2, h3, p { margin-top: 0; }
   --my: 48%;
   --px: 0;
   --py: 0;
+  --hero-parallax-y: 0px;
   position: relative;
   min-height: 100svh;
   display: grid;
@@ -1619,7 +1620,7 @@ h1, h2, h3, p { margin-top: 0; }
 
   .poster-hero {
     --split: 50%;
-    --mobile-photo-h: clamp(300px, 40svh, 410px);
+    --mobile-photo-h: calc(100vw / 3);
     min-height: auto;
     grid-template-columns: 1fr;
     grid-template-rows: var(--mobile-photo-h) auto 48px;
@@ -1660,7 +1661,12 @@ h1, h2, h3, p { margin-top: 0; }
   .poster-photo { grid-column: 1; grid-row: 1; border-inline-end: 0; border-bottom: 1px solid var(--line-dark); }
   .heat-haze-canvas { display: none; }
   .poster-photo:has(.heat-haze-canvas.is-ready) > picture { opacity: 1; }
-  .poster-photo > picture img { object-position: right center; transform: scale(1.015); }
+  .poster-photo > picture img {
+    object-position: right center;
+    transform: translate3d(0, var(--hero-parallax-y), 0) scale(1.2);
+    transition: filter 650ms ease, opacity 360ms ease;
+    will-change: transform;
+  }
   .photo-stamp { inset-inline-start: 18px; inset-block-end: 20px; }
 
   .poster-copy { grid-column: 1; grid-row: 2; min-height: 590px; padding: 64px 20px 52px; }
@@ -1745,13 +1751,34 @@ h1, h2, h3, p { margin-top: 0; }
     grid-row: 2;
     width: 100%;
     min-height: auto;
+    position: static;
     justify-self: stretch;
     justify-content: flex-start;
     align-items: stretch;
     padding: 52px 20px calc(112px + env(safe-area-inset-bottom));
     background: var(--coal);
   }
-  .final-orange > h2 { max-width: 100%; margin-bottom: 22px; font-size: clamp(46px, 12vw, 64px); line-height: .96; }
+  .final-kicker {
+    position: absolute;
+    z-index: 4;
+    top: 34px;
+    right: 18px;
+    width: 45%;
+    margin: 0;
+    font-size: 8px;
+    line-height: 1.4;
+  }
+  .final-orange > h2 {
+    position: absolute;
+    z-index: 4;
+    top: 57px;
+    right: 18px;
+    width: 45%;
+    max-width: none;
+    margin: 0;
+    font-size: clamp(25px, 6.8vw, 38px);
+    line-height: .96;
+  }
   .final-orange-copy { max-width: 100%; margin-bottom: 30px; font-size: 15px; }
   .final-orange > a { width: 100%; min-height: 68px; }
   .final-contacts { margin-top: 30px; }
