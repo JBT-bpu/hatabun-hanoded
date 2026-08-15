@@ -22,6 +22,12 @@ await sharp(path.join(brandMasterDir, "horizontal-logo-v2.png"))
   .webp({ quality: 92, alphaQuality: 100, smartSubsample: true })
   .toFile(path.join(brandDir, "brand-horizontal-logo-v2.webp"));
 
+await sharp(path.join(brandMasterDir, "primary-logo-v2.png"))
+  .trim()
+  .resize({ height: 1400, fit: "inside", withoutEnlargement: true })
+  .webp({ quality: 92, alphaQuality: 100, smartSubsample: true })
+  .toFile(path.join(brandDir, "brand-primary-logo-v2.webp"));
+
 const webp = async (input, output, options = {}) => {
   const image = sharp(input);
   if (options.resize) image.resize(options.resize);

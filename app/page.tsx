@@ -94,7 +94,7 @@ const storyLayerStyle = (index: number) => ({
 
 function BrandEmblem({ variant = "primary" }: { variant?: "primary" | "seal" }) {
   const source = variant === "primary"
-    ? "/brand/brand-primary-logo.png"
+    ? "/brand/brand-primary-logo-v2.webp"
     : "/brand/brand-round-seal.png";
 
   return (

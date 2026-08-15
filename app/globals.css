@@ -377,7 +377,7 @@ h1, h2, h3, p { margin-top: 0; }
 }
 
 .hero-brand-lockup {
-  width: min(100%, 360px);
+  width: min(100%, 460px);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -402,10 +402,10 @@ h1, h2, h3, p { margin-top: 0; }
 }
 
 .hero-brand-lockup .emblem {
-  width: min(100%, clamp(235px, 31vh, 320px));
+  width: min(100%, clamp(285px, 37vh, 390px));
   height: auto;
-  aspect-ratio: 756 / 892;
-  margin: -10px auto 6px;
+  aspect-ratio: 2 / 3;
+  margin: -26px auto -4px;
 }
 
 .site-is-lit .emblem-crest { animation: emblem-breathe 4.8s ease-in-out infinite; }
@@ -1664,7 +1664,8 @@ h1, h2, h3, p { margin-top: 0; }
 
   .poster-copy { grid-column: 1; grid-row: 2; min-height: 590px; padding: 64px 20px 52px; }
   .poster-copy::before { inset: 12px; }
-  .poster-copy .emblem { transform: none; transform-origin: center; margin-bottom: 8px; }
+  .hero-brand-lockup { width: min(100%, 320px); }
+  .poster-copy .emblem { width: min(78vw, 280px); transform: none; transform-origin: center; margin: -14px auto 2px; }
   .poster-copy h1 { font-size: clamp(64px, 19vw, 88px); margin-bottom: 22px; }
   .poster-slogan { font-size: clamp(38px, 11.5vw, 52px); }
   .poster-body { font-size: 15px; }
