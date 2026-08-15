@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import EmberField from "./EmberField";
 import HeatHaze from "./HeatHaze";
+import LottieFlame from "./LottieFlame";
 
 const whatsappBase = "https://wa.me/972544669111?text=";
 
@@ -263,7 +264,7 @@ export default function Home() {
           data-ember-burst="42"
           data-ember-toggle="true"
         >
-          <span className="ignition-core"><i /></span>
+          <LottieFlame active={lit} />
           <b>{lit ? "בוער" : "הדליקו"}</b>
           <small>{lit ? "לחצו לכיבוי" : "לחצו לאש"}</small>
         </button>
