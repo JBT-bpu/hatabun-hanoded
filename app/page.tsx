@@ -71,6 +71,12 @@ function BrandEmblem({ compact = false }: { compact?: boolean }) {
         alt=""
         decoding="async"
       />
+      <img
+        className="emblem-rider"
+        src="/camel-rider-silhouette.png"
+        alt=""
+        decoding="async"
+      />
     </span>
   );
 }
@@ -314,9 +320,11 @@ export default function Home() {
 
         <div className="poster-copy">
           <div className="poster-copy-inner">
-            <BrandEmblem />
-            <p className="poster-edition">מהדורת אירועים / 2026</p>
-            <h1 id="hero-title">הטאבון הנודד</h1>
+            <div className="hero-brand-lockup">
+              <BrandEmblem />
+              <p className="poster-edition">מהדורת אירועים / 2026</p>
+              <h1 id="hero-title">הטאבון הנודד</h1>
+            </div>
             <div className="brand-strike" aria-hidden="true" />
             <p className="poster-slogan">
               <span>האש נדלקת.</span>
