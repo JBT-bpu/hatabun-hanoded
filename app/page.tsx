@@ -666,7 +666,7 @@ export default function Home() {
       <section className="final-poster" aria-labelledby="final-title" data-ember-zone data-ember-source="final" data-ember-arrival data-ember-x="0.49" data-ember-y="0.48">
         <img className="final-scene-image" src="/campaign/final-poster-wide.webp" alt="אהרון מוביל גמל ואת הטאבון הנודד אל אירוע ערב" />
         <div className="final-flame-line" aria-hidden="true"><i /><i /><i /><i /></div>
-        <div className="final-orange" data-reveal>
+          <div className="final-orange">
           <span className="final-kicker">הטאבון הנודד / LIVE FIRE</span>
           <h2 id="final-title">יש אירוע באופק?<br />בואו ניתן לו <em>אש.</em></h2>
           <span className="final-orange-copy">אנחנו מגיעים, מדליקים ואופים מול האורחים. אתם נשארים עם ערב שאי אפשר לפספס.</span>
