@@ -57,10 +57,12 @@ function BrandEmblem({ compact = false }: { compact?: boolean }) {
   return (
     <span className={`emblem ${compact ? "emblem-compact" : ""}`} aria-hidden="true">
       <span className="emblem-orbit"><i /><i /><i /></span>
-      <span className="emblem-arch">
-        <span className="css-flame"><i /></span>
-      </span>
-      <span className="emblem-line" />
+      <img
+        className="emblem-art"
+        src="/taboon-ember-trail-logo.png"
+        alt=""
+        decoding="async"
+      />
     </span>
   );
 }

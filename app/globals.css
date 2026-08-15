@@ -343,16 +343,17 @@ h1, h2, h3, p { margin-top: 0; }
 
 .emblem {
   position: relative;
-  width: 180px;
-  height: 98px;
+  width: 210px;
+  height: 124px;
   display: block;
-  margin: 0 auto 22px;
+  margin: 0 auto 16px;
+  isolation: isolate;
 }
 
 .emblem-orbit {
   position: absolute;
   z-index: 0;
-  inset: -21px 30px 1px;
+  inset: -13px 22px 0;
   border: 1px solid rgba(241, 231, 210, .2);
   border-inline-start-color: var(--orange);
   border-block-start-color: rgba(255, 180, 62, .62);
@@ -375,78 +376,21 @@ h1, h2, h3, p { margin-top: 0; }
 .emblem-orbit i:nth-child(3) { inset-block-end: 8%; inset-inline-start: 30%; width: 3px; height: 3px; background: #ffb43e; }
 .site-is-lit .emblem-orbit { animation: emblem-orbit 11s linear infinite; }
 
-.emblem-arch {
-  position: absolute;
-  width: 102px;
-  height: 62px;
-  inset-block-start: 0;
-  inset-inline-start: 50%;
-  transform: translateX(50%);
-  border: 10px solid var(--cream);
-  border-bottom: 0;
-  border-radius: 64px 64px 0 0;
-}
-
-.emblem-arch::before,
-.emblem-arch::after {
-  content: "";
-  position: absolute;
-  inset-block-start: -10px;
-  height: 10px;
-  width: 1px;
-  background: var(--coal);
-  box-shadow: 19px 4px 0 var(--coal), 39px 1px 0 var(--coal), 58px 5px 0 var(--coal), 77px 0 0 var(--coal);
-}
-
-.emblem-arch::before { inset-inline-start: 10px; transform: rotate(-13deg); }
-.emblem-arch::after { inset-inline-end: 11px; transform: rotate(13deg); }
-
-.emblem-line {
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: 25px;
-  height: 2px;
-  background: var(--cream);
-}
-
-.emblem-line::before,
-.emblem-line::after {
-  content: "";
-  position: absolute;
-  inset-block-start: -4px;
-  width: 38px;
-  height: 6px;
-  background: var(--coal);
-  border-top: 1px solid var(--cream);
-}
-
-.emblem-line::before { inset-inline-start: 10px; transform: rotate(6deg); }
-.emblem-line::after { inset-inline-end: 10px; transform: rotate(-6deg); }
-
-.css-flame {
+.emblem-art {
   position: absolute;
   z-index: 2;
-  inset-inline-start: 50%;
-  inset-block-end: 6px;
-  width: 28px;
-  height: 38px;
-  transform: translateX(50%) rotate(45deg);
-  border-radius: 70% 12% 70% 70%;
-  background: var(--orange);
-  box-shadow: 0 0 20px rgba(255, 84, 27, 0.34);
+  top: -17px;
+  left: 50%;
+  width: 226px;
+  height: 161px;
+  object-fit: contain;
+  transform: translateX(-50%);
+  transform-origin: 50% 62%;
+  filter: drop-shadow(0 8px 18px rgba(255, 84, 27, .1));
+  pointer-events: none;
 }
 
-.css-flame i {
-  position: absolute;
-  width: 12px;
-  height: 20px;
-  inset-inline-start: 9px;
-  inset-block-end: 4px;
-  border-radius: 70% 12% 70% 70%;
-  background: var(--coal);
-}
-
-.site-is-lit .css-flame { animation: flame-breathe 2.4s ease-in-out infinite; }
+.site-is-lit .emblem-art { animation: emblem-breathe 3.4s ease-in-out infinite; }
 
 .emblem-compact { transform: scale(0.58); transform-origin: center; margin: -20px auto -6px; }
 
@@ -1202,7 +1146,10 @@ h1, h2, h3, p { margin-top: 0; }
   38% { opacity: .95; }
   100% { opacity: 0; transform: scale(1.46); }
 }
-@keyframes flame-breathe { 0%, 100% { transform: translateX(50%) rotate(45deg) scale(.94); } 50% { transform: translateX(50%) rotate(45deg) scale(1.08); } }
+@keyframes emblem-breathe {
+  0%, 100% { transform: translateX(-50%) scale(.99); filter: drop-shadow(0 8px 18px rgba(255, 84, 27, .1)); }
+  50% { transform: translateX(-50%) scale(1.012); filter: drop-shadow(0 10px 24px rgba(255, 84, 27, .2)); }
+}
 
 @media (max-width: 1050px) {
   .poster-hero { --split: 44%; grid-template-columns: 44% 56%; }
@@ -1265,7 +1212,7 @@ h1, h2, h3, p { margin-top: 0; }
 
   .poster-copy { grid-column: 1; grid-row: 2; min-height: 590px; padding: 76px 20px 52px; }
   .poster-copy::before { inset: 12px; }
-  .emblem { transform: scale(.78); transform-origin: center; margin-bottom: 2px; }
+  .poster-copy .emblem { transform: scale(.78); transform-origin: center; margin-bottom: 2px; }
   .poster-copy h1 { font-size: clamp(64px, 19vw, 88px); margin-bottom: 22px; }
   .poster-slogan { font-size: clamp(38px, 11.5vw, 52px); }
   .poster-body { font-size: 15px; }
