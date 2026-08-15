@@ -55,6 +55,33 @@ const faqs = [
   ["איך מקבלים הצעה?", "שולחים תאריך, מיקום וכמה מילים על האירוע בוואטסאפ — ואנחנו ממשיכים משם."],
 ];
 
+const eventCategories = [
+  {
+    number: "01",
+    title: "בבית",
+    titleLines: ["בבית"],
+    kicker: "קרוב / אישי",
+    image: "/campaign/event-home.webp",
+    alt: "אהרון, הגמל והטאבון הנודד באירוע ביתי אינטימי",
+  },
+  {
+    number: "02",
+    title: "בטבע",
+    titleLines: ["בטבע"],
+    kicker: "פתוח / פראי",
+    image: "/campaign/event-nature.webp",
+    alt: "אהרון, הגמל והטאבון הנודד באירוע בטבע בשעת שקיעה",
+  },
+  {
+    number: "03",
+    title: "באולם או בגן",
+    titleLines: ["באולם", "או בגן"],
+    kicker: "מדויק / מרשים",
+    image: "/campaign/event-venue.webp",
+    alt: "אהרון, הגמל והטאבון הנודד באולם וגן אירועים בערב",
+  },
+];
+
 const storyLayerStyle = (index: number) => ({
   "--stage-alpha": `var(--stage-${index}-alpha)`,
   "--stage-y": `var(--stage-${index}-y)`,
@@ -83,10 +110,12 @@ export default function Home() {
   const [activeStage, setActiveStage] = useState(0);
   const [menuMode, setMenuMode] = useState<keyof typeof menus>("dairy");
   const [selected, setSelected] = useState<string[]>(["מוצרלה", "פסטו", "אנטיפסטי"]);
+  const [activeGallery, setActiveGallery] = useState<number | null>(null);
   const heroRef = useRef<HTMLElement>(null);
   const stageShellRef = useRef<HTMLDivElement>(null);
   const ignitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menu = menus[menuMode];
+  const gallery = activeGallery === null ? null : eventCategories[activeGallery];
 
   useEffect(() => {
     const root = document.documentElement;
@@ -200,6 +229,20 @@ export default function Home() {
       observer?.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    if (activeGallery === null) return;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveGallery(null);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [activeGallery]);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -530,20 +573,61 @@ export default function Home() {
             <h2 id="events-title">אנחנו מביאים<br /><em>את הלהבה.</em></h2>
             <p>אתם רק בוחרים איפה היא נדלקת.</p>
           </div>
-          <img className="events-brand-mark" src="/brand/brand-camel-oven-icon.png" alt="" aria-hidden="true" />
         </header>
+        <div className="events-brand-stage" data-reveal aria-hidden="true">
+          <span>LIVE FIRE / ON THE ROAD</span>
+          <img className="events-brand-mark" src="/campaign/event-opener.webp" alt="" />
+          <i />
+        </div>
         <div className="events-grid" data-reveal>
-          <article className="event-card">
-            <span>01</span><p>קרוב / אישי</p><h3>בבית</h3><i>↙</i>
-          </article>
-          <article className="event-card event-card-orange">
-            <span>02</span><p>פתוח / פראי</p><h3>בטבע</h3><i>↙</i>
-          </article>
-          <article className="event-card event-card-cream">
-            <span>03</span><p>מדויק / מרשים</p><h3>באולם<br />או בגן</h3><i>↙</i>
-          </article>
+          {eventCategories.map((category, index) => (
+            <button
+              className="event-card"
+              type="button"
+              key={category.title}
+              aria-haspopup="dialog"
+              aria-label={`פתיחת גלריית אירועים ${category.title}`}
+              onClick={() => setActiveGallery(index)}
+              data-ember-burst="18"
+              data-ember-target=".events-brand-stage"
+            >
+              <img src={category.image} alt="" aria-hidden="true" />
+              <span>{category.number}</span>
+              <div className="event-card-copy">
+                <p>{category.kicker}</p>
+                <h3>{category.titleLines.map((line) => <span key={line}>{line}</span>)}</h3>
+              </div>
+              <i aria-hidden="true">פתחו גלריה ↙</i>
+            </button>
+          ))}
         </div>
       </section>
+
+      {gallery && (
+        <div
+          className="gallery-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="gallery-title"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) setActiveGallery(null);
+          }}
+        >
+          <button className="gallery-close" type="button" onClick={() => setActiveGallery(null)} aria-label="סגירת הגלריה">×</button>
+          <div className="gallery-viewer">
+            <figure>
+              <img src={gallery.image} alt={gallery.alt} />
+              <figcaption><bdi>01 / 01</bdi> — שער הגלריה</figcaption>
+            </figure>
+            <div className="gallery-copy">
+              <p>{gallery.number} / גלריית אירועים</p>
+              <h2 id="gallery-title">{gallery.title}</h2>
+              <span>השער מוכן. את הרגעים האמיתיים מהאירועים נוסיף לכאן כשיעלו התמונות.</span>
+              <button type="button" onClick={() => setActiveGallery(null)}>חזרה לאתר ↑</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <section className="answers" id="faq" aria-labelledby="faq-title">
         <div className="answers-intro" data-reveal>
