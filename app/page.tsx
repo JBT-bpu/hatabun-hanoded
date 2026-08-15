@@ -336,7 +336,7 @@ export default function Home() {
       >
         <header className="poster-nav">
           <a className="nav-brand" href="#top" aria-label="הטאבון הנודד — חזרה לראש העמוד">
-            <img src="/brand/brand-horizontal-logo.png" alt="" />
+            <img src="/brand/brand-horizontal-logo-v2.webp" alt="" />
           </a>
           <nav aria-label="ניווט ראשי">
             <a href="#experience">החוויה</a>

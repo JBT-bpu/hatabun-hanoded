@@ -11,9 +11,16 @@ const publicDir = path.join(root, "public");
 const campaignDir = path.join(publicDir, "campaign");
 const brandDir = path.join(publicDir, "brand");
 const campaignMasterDir = path.join(root, "assets", "campaign-master");
+const brandMasterDir = path.join(root, "assets", "brand-master");
 
 await fs.mkdir(campaignDir, { recursive: true });
 await fs.mkdir(brandDir, { recursive: true });
+
+await sharp(path.join(brandMasterDir, "horizontal-logo-v2.png"))
+  .trim()
+  .resize(1400, null, { fit: "inside", withoutEnlargement: true })
+  .webp({ quality: 92, alphaQuality: 100, smartSubsample: true })
+  .toFile(path.join(brandDir, "brand-horizontal-logo-v2.webp"));
 
 const webp = async (input, output, options = {}) => {
   const image = sharp(input);
@@ -107,7 +114,8 @@ for (const [input, output] of [
 const ogBackground = await sharp(path.join(source, "25-social-og-background.png"))
   .resize(1732, 909, { fit: "cover" })
   .toBuffer();
-const ogLogo = await sharp(path.join(source, "09-horizontal-logo.png"))
+const ogLogo = await sharp(path.join(brandMasterDir, "horizontal-logo-v2.png"))
+  .trim()
   .resize(720, null, { fit: "inside" })
   .toBuffer();
 await sharp(ogBackground)
