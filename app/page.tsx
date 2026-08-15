@@ -659,13 +659,18 @@ export default function Home() {
       <section className="final-poster" aria-labelledby="final-title">
         <div className="final-black" data-ember-zone data-ember-source="final" data-ember-arrival data-ember-x="0.5" data-ember-y="0.34">
           <img className="final-character" src="/campaign/final-cta.webp" alt="" aria-hidden="true" />
-          <p>טאבון נייד לאירועים</p>
-          <h2 id="final-title">האש<br />מחכה.</h2>
+          <div className="final-flame-line" aria-hidden="true"><i /><i /><i /><i /></div>
+          <div className="final-black-copy" data-reveal>
+            <p>הטאבון הנודד / LIVE FIRE</p>
+            <h2 id="final-title"><span>האש</span><span>מגיעה</span><strong>אליכם.</strong></h2>
+            <small>פוקאצ׳ות חמות. להבה אמיתית. רגע שכולם זוכרים.</small>
+          </div>
         </div>
         <div className="final-orange">
-          <p>יש תאריך? יש לוקיישן?<br />מכאן זה כבר מתחמם.</p>
+          <p>יש אירוע באופק?<br />בואו ניתן לו <em>אש.</em></p>
+          <span className="final-orange-copy">אנחנו מגיעים, מדליקים ואופים מול האורחים. אתם נשארים עם ערב שאי אפשר לפספס.</span>
           <a href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="32" data-ember-target=".final-black">
-            <span>בואו נדליק אירוע</span><i>↙</i>
+            <span>מדליקים את התאריך</span><i>↙</i>
           </a>
           <div className="final-contacts">
             <a href="tel:+972544669111">אהרון / <bdi>054-4669-111</bdi></a>
