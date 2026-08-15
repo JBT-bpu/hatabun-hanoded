@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import EmberField from "./EmberField";
+import HeatHaze from "./HeatHaze";
 
 const whatsappBase = "https://wa.me/972544669111?text=";
 
@@ -55,6 +56,7 @@ const faqs = [
 function BrandEmblem({ compact = false }: { compact?: boolean }) {
   return (
     <span className={`emblem ${compact ? "emblem-compact" : ""}`} aria-hidden="true">
+      <span className="emblem-orbit"><i /><i /><i /></span>
       <span className="emblem-arch">
         <span className="css-flame"><i /></span>
       </span>
@@ -65,31 +67,64 @@ function BrandEmblem({ compact = false }: { compact?: boolean }) {
 
 export default function Home() {
   const [lit, setLit] = useState(false);
-  const [activeStage, setActiveStage] = useState(1);
+  const [activeStage, setActiveStage] = useState(0);
   const [menuMode, setMenuMode] = useState<keyof typeof menus>("dairy");
   const [selected, setSelected] = useState<string[]>(["מוצרלה", "פסטו", "אנטיפסטי"]);
   const heroRef = useRef<HTMLElement>(null);
+  const stageShellRef = useRef<HTMLDivElement>(null);
   const ignitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menu = menus[menuMode];
 
   useEffect(() => {
     const root = document.documentElement;
+    const revealElements = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
+
+    const revealInView = () => {
+      revealElements.forEach((element) => {
+        if (element.classList.contains("is-visible")) return;
+        const rect = element.getBoundingClientRect();
+        if (rect.top < window.innerHeight * 0.92 && rect.bottom > 0) element.classList.add("is-visible");
+      });
+    };
+
+    const updateStory = () => {
+      const shell = stageShellRef.current;
+      if (!shell) return;
+      const rect = shell.getBoundingClientRect();
+      const travel = Math.max(1, rect.height - window.innerHeight);
+      const progress = Math.min(1, Math.max(0, -rect.top / travel));
+      const nextStage = Math.min(stages.length - 1, Math.floor(progress * stages.length));
+      shell.style.setProperty("--story-progress", String(progress));
+      setActiveStage((current) => current === nextStage ? current : nextStage);
+    };
+
     const updateScroll = () => {
       const max = document.body.scrollHeight - window.innerHeight;
       root.style.setProperty("--scroll", max > 0 ? String(window.scrollY / max) : "0");
+      revealInView();
+      updateStory();
     };
     updateScroll();
     window.addEventListener("scroll", updateScroll, { passive: true });
+    window.addEventListener("resize", updateScroll, { passive: true });
 
-    const observer = new IntersectionObserver(
-      (entries) => entries.forEach((entry) => entry.target.classList.toggle("is-visible", entry.isIntersecting)),
-      { threshold: 0.14 },
-    );
-    document.querySelectorAll("[data-reveal]").forEach((element) => observer.observe(element));
+    const observer = typeof IntersectionObserver === "function"
+      ? new IntersectionObserver(
+          (entries) => entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("is-visible");
+              observer?.unobserve(entry.target);
+            }
+          }),
+          { threshold: 0.08 },
+        )
+      : null;
+    revealElements.forEach((element) => observer?.observe(element));
 
     return () => {
       window.removeEventListener("scroll", updateScroll);
-      observer.disconnect();
+      window.removeEventListener("resize", updateScroll);
+      observer?.disconnect();
     };
   }, []);
 
@@ -143,6 +178,20 @@ export default function Home() {
     setLit((value) => !value);
   }
 
+  function goToStage(index: number) {
+    const shell = stageShellRef.current;
+    if (!shell) {
+      setActiveStage(index);
+      return;
+    }
+    const top = window.scrollY + shell.getBoundingClientRect().top;
+    const travel = Math.max(0, shell.offsetHeight - window.innerHeight);
+    const target = top + (index / Math.max(1, stages.length - 1)) * travel;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: target, behavior: reducedMotion ? "auto" : "smooth" });
+    setActiveStage(index);
+  }
+
   return (
     <main className={lit ? "site-is-lit" : "site-is-dim"}>
       <EmberField lit={lit} />
@@ -175,6 +224,7 @@ export default function Home() {
           data-ember-y="0.57"
         >
           <img src="/hero-fire.png" alt="טאבון נייד בוער ופוקאצ׳ה יוצאת אל אורחי האירוע" />
+          <HeatHaze src="/hero-fire.png" lit={lit} />
           <div className="photo-vignette" aria-hidden="true" />
           <div className="heat-cursor" aria-hidden="true" />
           <p className="photo-stamp"><span>LIVE FIRE</span> / <b>01</b></p>
@@ -234,38 +284,51 @@ export default function Home() {
           <h2 id="experience-title">שלושה רגעים.<br /><em>שואו אחד.</em></h2>
         </header>
 
-        <div className="stage-shell" data-reveal>
-          <div className="stage-tabs" role="tablist" aria-label="שלבי החוויה">
-            {stages.map((stage, index) => (
-              <button
-                key={stage.number}
-                type="button"
-                role="tab"
-                aria-selected={activeStage === index}
-                onClick={() => setActiveStage(index)}
-                data-ember-burst="22"
-                data-ember-target=".stage-arch"
-              >
-                <span>{stage.number}</span>
-                <b>{stage.tab}</b>
-                <i aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-
-          <div className="stage-display" role="tabpanel" key={stages[activeStage].number}>
-            <div className="stage-copy">
-              <p>{stages[activeStage].label}</p>
-              <h3>{stages[activeStage].title}</h3>
-              <span>{stages[activeStage].text}</span>
+        <div ref={stageShellRef} className="stage-shell story-scroll" data-reveal>
+          <div className="stage-sticky">
+            <div className="stage-tabs" role="tablist" aria-label="שלבי החוויה">
+              {stages.map((stage, index) => (
+                <button
+                  key={stage.number}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeStage === index}
+                  onClick={() => goToStage(index)}
+                  data-ember-burst="22"
+                  data-ember-target=".stage-arch"
+                >
+                  <span>{stage.number}</span>
+                  <b>{stage.tab}</b>
+                  <i aria-hidden="true" />
+                </button>
+              ))}
             </div>
-            <div className="stage-visual" aria-hidden="true">
-              <span className="stage-word">{stages[activeStage].word}</span>
-              <div className="stage-arch" data-ember-source="stage" data-ember-x="0.34" data-ember-y="0.58">
-                <img src="/hero-fire.png" alt="" />
-                <div className="stage-flare" />
+
+            <div className="stage-display" role="tabpanel" key={stages[activeStage].number}>
+              <div className="stage-copy">
+                <p>{stages[activeStage].label}</p>
+                <h3>{stages[activeStage].title}</h3>
+                <span>{stages[activeStage].text}</span>
+                <div className="story-progress" aria-hidden="true">
+                  <i style={{ "--story-step": (activeStage + 1) / stages.length } as CSSProperties} />
+                  <b>{stages[activeStage].number} / 03</b>
+                </div>
               </div>
-              <p>LIVE / {stages[activeStage].number}</p>
+              <div className="stage-visual" aria-hidden="true">
+                <span className="stage-word">{stages[activeStage].word}</span>
+                <div
+                  className="stage-arch story-arch"
+                  data-ember-source="stage"
+                  data-ember-x="0.5"
+                  data-ember-y="0.48"
+                  style={{ "--story-position": `${activeStage * 50}%` } as CSSProperties}
+                >
+                  <div className="story-filmstrip" />
+                  <div className="stage-flare" />
+                  <span className="story-scanline" />
+                </div>
+                <p>LIVE / {stages[activeStage].number}</p>
+              </div>
             </div>
           </div>
         </div>
