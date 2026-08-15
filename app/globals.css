@@ -1437,6 +1437,7 @@ h1, h2, h3, p { margin-top: 0; }
   min-height: 820px;
   display: grid;
   grid-template-columns: 1fr;
+  direction: ltr;
   overflow: hidden;
   isolation: isolate;
   background: var(--coal);
@@ -1740,9 +1741,20 @@ h1, h2, h3, p { margin-top: 0; }
   .final-poster { min-height: auto; grid-template-rows: auto auto; }
   .final-poster::before { background: linear-gradient(180deg, transparent 18%, rgba(9,8,7,.18) 40%, var(--coal) 60%); }
   .final-scene-image { position: relative; grid-row: 1; height: auto; aspect-ratio: 1.864 / 1; object-position: center; }
-  .final-orange { grid-row: 2; width: 100%; min-height: 590px; padding: 68px 20px 82px; background: var(--coal); }
-  .final-orange > h2 { font-size: clamp(58px, 16vw, 82px); }
-  .final-orange > a { width: 100%; }
+  .final-orange {
+    grid-row: 2;
+    width: 100%;
+    min-height: auto;
+    justify-self: stretch;
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: 52px 20px calc(112px + env(safe-area-inset-bottom));
+    background: var(--coal);
+  }
+  .final-orange > h2 { max-width: 100%; margin-bottom: 22px; font-size: clamp(46px, 12vw, 64px); line-height: .96; }
+  .final-orange-copy { max-width: 100%; margin-bottom: 30px; font-size: 15px; }
+  .final-orange > a { width: 100%; min-height: 68px; }
+  .final-contacts { margin-top: 30px; }
   .poster-footer { min-height: 120px; align-items: flex-start; flex-direction: column; justify-content: center; padding: 22px 20px; gap: 7px; }
 
   .mobile-bar {
