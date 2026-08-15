@@ -45,6 +45,12 @@ await webp(
   },
 );
 
+await webp(
+  path.join(campaignMasterDir, "final-poster-wide.png"),
+  path.join(campaignDir, "final-poster-wide.webp"),
+  { quality: 91 },
+);
+
 const storySources = [
   path.join(source, "03-story-arrival.png"),
   path.join(generated, "exec-69ff43d6-b1d1-4c7c-a28d-aa6b3a08c981.png"),
@@ -111,7 +117,7 @@ for (const [input, output] of [
     .toFile(path.join(brandDir, output));
 }
 
-const ogBackground = await sharp(path.join(source, "25-social-og-background.png"))
+const ogBackground = await sharp(path.join(campaignMasterDir, "final-poster-wide.png"))
   .resize(1732, 909, { fit: "cover" })
   .toBuffer();
 const ogLogo = await sharp(path.join(brandMasterDir, "horizontal-logo-v2.png"))

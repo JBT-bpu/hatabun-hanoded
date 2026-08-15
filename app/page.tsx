@@ -656,20 +656,14 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="final-poster" aria-labelledby="final-title">
-        <div className="final-black" data-ember-zone data-ember-source="final" data-ember-arrival data-ember-x="0.5" data-ember-y="0.34">
-          <img className="final-character" src="/campaign/final-cta.webp" alt="" aria-hidden="true" />
-          <div className="final-flame-line" aria-hidden="true"><i /><i /><i /><i /></div>
-          <div className="final-black-copy" data-reveal>
-            <p>הטאבון הנודד / LIVE FIRE</p>
-            <h2 id="final-title"><span>האש</span><span>מגיעה</span><strong>אליכם.</strong></h2>
-            <small>פוקאצ׳ות חמות. להבה אמיתית. רגע שכולם זוכרים.</small>
-          </div>
-        </div>
-        <div className="final-orange">
-          <p>יש אירוע באופק?<br />בואו ניתן לו <em>אש.</em></p>
+      <section className="final-poster" aria-labelledby="final-title" data-ember-zone data-ember-source="final" data-ember-arrival data-ember-x="0.49" data-ember-y="0.48">
+        <img className="final-scene-image" src="/campaign/final-poster-wide.webp" alt="אהרון מוביל גמל ואת הטאבון הנודד אל אירוע ערב" />
+        <div className="final-flame-line" aria-hidden="true"><i /><i /><i /><i /></div>
+        <div className="final-orange" data-reveal>
+          <span className="final-kicker">הטאבון הנודד / LIVE FIRE</span>
+          <h2 id="final-title">יש אירוע באופק?<br />בואו ניתן לו <em>אש.</em></h2>
           <span className="final-orange-copy">אנחנו מגיעים, מדליקים ואופים מול האורחים. אתם נשארים עם ערב שאי אפשר לפספס.</span>
-          <a href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="32" data-ember-target=".final-black">
+          <a href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="32" data-ember-target=".final-poster">
             <span>מדליקים את התאריך</span><i>↙</i>
           </a>
           <div className="final-contacts">
