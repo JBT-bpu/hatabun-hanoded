@@ -64,16 +64,9 @@ const storyLayerStyle = (index: number) => ({
 function BrandEmblem({ compact = false }: { compact?: boolean }) {
   return (
     <span className={`emblem ${compact ? "emblem-compact" : ""}`} aria-hidden="true">
-      <span className="emblem-orbit"><i /><i /><i /></span>
       <img
-        className="emblem-art"
-        src="/taboon-ember-trail-logo.png"
-        alt=""
-        decoding="async"
-      />
-      <img
-        className="emblem-rider"
-        src="/camel-rider-silhouette.png"
+        className="emblem-crest"
+        src="/brand-book-crest-v1.png"
         alt=""
         decoding="async"
       />
