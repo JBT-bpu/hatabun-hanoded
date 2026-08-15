@@ -350,8 +350,8 @@ export default function Home() {
           className="poster-photo"
           aria-label="טאבון נייד בוער באירוע ערב"
           data-ember-source="hero"
-          data-ember-x="0.36"
-          data-ember-y="0.57"
+          data-ember-x="0.88"
+          data-ember-y="0.55"
         >
           <picture>
             <source media="(max-width: 760px)" srcSet="/campaign/hero-mobile.webp" />

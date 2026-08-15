@@ -268,7 +268,7 @@ h1, h2, h3, p { margin-top: 0; }
   height: 100%;
   max-width: none;
   object-fit: cover;
-  object-position: 43% center;
+  object-position: center;
   filter: saturate(1.05) contrast(1.05) brightness(0.92);
   transform: translate(calc(var(--px) * -12px), calc(var(--py) * -8px)) scale(1.045);
   transition: filter 650ms ease, transform 240ms ease-out, opacity 360ms ease;
@@ -1635,20 +1635,21 @@ h1, h2, h3, p { margin-top: 0; }
 
   .poster-hero {
     --split: 50%;
+    --mobile-photo-h: clamp(300px, 40svh, 410px);
     min-height: auto;
     grid-template-columns: 1fr;
-    grid-template-rows: 54svh auto 48px;
+    grid-template-rows: var(--mobile-photo-h) auto 48px;
   }
 
   .poster-hero::before {
-    inset: calc(54svh - 30px) 0 auto;
+    inset: calc(var(--mobile-photo-h) - 30px) 0 auto;
     width: auto;
     height: 60px;
     background: linear-gradient(180deg, transparent, rgba(255, 84, 27, .3), transparent);
   }
 
   .poster-hero::after {
-    inset: calc(54svh - 1px) 0 auto;
+    inset: calc(var(--mobile-photo-h) - 1px) 0 auto;
     width: auto;
     height: 2px;
     background: linear-gradient(90deg, transparent, #ffb43e 20%, #fff1c8 50%, var(--orange) 80%, transparent);
@@ -1675,7 +1676,7 @@ h1, h2, h3, p { margin-top: 0; }
   .poster-photo { grid-column: 1; grid-row: 1; border-inline-end: 0; border-bottom: 1px solid var(--line-dark); }
   .heat-haze-canvas { display: none; }
   .poster-photo:has(.heat-haze-canvas.is-ready) > picture { opacity: 1; }
-  .poster-photo > picture img { object-position: center 42%; transform: scale(1.015); }
+  .poster-photo > picture img { object-position: right center; transform: scale(1.015); }
   .photo-stamp { inset-inline-start: 18px; inset-block-end: 20px; }
 
   .poster-copy { grid-column: 1; grid-row: 2; min-height: 590px; padding: 64px 20px 52px; }
@@ -1688,7 +1689,7 @@ h1, h2, h3, p { margin-top: 0; }
   .poster-cta { width: 100%; }
   .poster-text-link { align-self: center; }
 
-  .ignition { inset-inline-start: 50%; inset-block-start: 54svh; width: 92px; height: 92px; }
+  .ignition { inset-inline-start: 50%; inset-block-start: var(--mobile-photo-h); width: 92px; height: 92px; }
   .ignition-animation { width: 44px; height: 44px; margin-bottom: -3px; }
   .poster-ticker { grid-column: 1; grid-row: 3; }
 

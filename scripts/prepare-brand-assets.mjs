@@ -10,6 +10,7 @@ const generated = path.join(
 const publicDir = path.join(root, "public");
 const campaignDir = path.join(publicDir, "campaign");
 const brandDir = path.join(publicDir, "brand");
+const campaignMasterDir = path.join(root, "assets", "campaign-master");
 
 await fs.mkdir(campaignDir, { recursive: true });
 await fs.mkdir(brandDir, { recursive: true });
@@ -21,14 +22,20 @@ const webp = async (input, output, options = {}) => {
 };
 
 await webp(
-  path.join(source, "01-hero-desktop.png"),
+  path.join(campaignMasterDir, "hero-seam-v2.png"),
   path.join(campaignDir, "hero-desktop.webp"),
-  { quality: 90 },
+  {
+    quality: 90,
+    resize: { width: 1920, height: 1080, fit: "cover", position: "center" },
+  },
 );
 await webp(
-  path.join(source, "02-hero-mobile.png"),
+  path.join(campaignMasterDir, "hero-seam-v2.png"),
   path.join(campaignDir, "hero-mobile.webp"),
-  { quality: 90 },
+  {
+    quality: 90,
+    resize: { width: 1080, height: 820, fit: "cover", position: "right" },
+  },
 );
 
 const storySources = [
