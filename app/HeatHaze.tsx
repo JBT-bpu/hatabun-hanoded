@@ -99,9 +99,14 @@ export default function HeatHaze({ src, lit }: { src: string; lit: boolean }) {
     const parent: HTMLElement = parentElement;
 
     const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    // The `pointer` media feature is unreliable on some real devices, so a
+    // narrow-viewport check backs it up — this canvas must never activate
+    // where the CSS hides it (see the mobile block in globals.css), or the
+    // photo it's meant to replace can end up hidden with nothing in its place.
     const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    const narrowViewport = window.innerWidth <= 760;
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-    if (coarsePointer || connection?.saveData) return;
+    if (coarsePointer || narrowViewport || connection?.saveData) return;
 
     const glResult = canvas.getContext("webgl2", {
       alpha: false,

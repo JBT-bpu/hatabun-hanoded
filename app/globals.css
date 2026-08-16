@@ -1916,7 +1916,10 @@ h1, h2, h3, p { margin-top: 0; }
 
   .poster-photo { grid-column: 1; grid-row: 1; border-inline-end: 0; border-bottom: 1px solid var(--line-dark); }
   .heat-haze-canvas { display: none; }
-  .poster-photo:has(.heat-haze-canvas.is-ready) > picture { opacity: 1; }
+  /* Unconditional: the animated heat-haze canvas never renders on mobile
+     (display: none above), so the static photo must never be hidden here
+     regardless of the desktop site-is-lit swap rule's specificity. */
+  .poster-photo > picture { opacity: 1 !important; }
   .poster-photo > picture img {
     object-position: center center;
     transform: translate3d(0, var(--hero-parallax-y), 0) scale(1.04);
@@ -1956,7 +1959,7 @@ h1, h2, h3, p { margin-top: 0; }
   .stage-sticky { min-height: 0; height: auto; position: relative; overflow: visible; }
   .stage-sticky::after { display: none; }
   .stage-tabs { position: sticky; inset-block-start: 64px; background: rgba(9, 8, 7, .98); }
-  .stage-display { min-height: 0; height: auto; grid-template-columns: 1fr; grid-template-rows: minmax(280px, 48svh) auto; overflow: visible; }
+  .stage-display { min-height: 0; height: auto; grid-template-columns: 1fr; grid-template-rows: minmax(220px, 38svh) auto; overflow: visible; }
   .stage-copy-stack {
     grid-row: 2;
     min-height: 0;
@@ -1987,7 +1990,7 @@ h1, h2, h3, p { margin-top: 0; }
   .stage-copy h3 { margin-bottom: 13px; font-size: clamp(38px, 11.5vw, 52px); }
   .stage-copy > span { font-size: 14px; line-height: 1.55; }
   .story-progress { margin-top: 18px; }
-  .stage-visual { grid-row: 1; min-height: 280px; border-inline-end: 0; border-bottom: 1px solid var(--line-dark); }
+  .stage-visual { grid-row: 1; min-height: 220px; border-inline-end: 0; border-bottom: 1px solid var(--line-dark); }
   .stage-arch { width: min(43%, 210px); box-shadow: 10px 10px 0 var(--orange); }
   .stage-word { font-size: 40vw; }
   .stage-display::after { width: 54px; filter: blur(8px); }
