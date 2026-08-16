@@ -1,100 +1,128 @@
-# vinext-starter
+# הטאבון הנודד — אתר מותג אינטראקטיבי
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+אתר תדמית וחוויית הזמנה בעברית עבור **הטאבון הנודד** — טאבון נייד לאירועים, עם אפייה חיה מול האורחים.
 
-## Prerequisites
+[צפייה באתר החי](https://hatabun-hanoded.jbt.chatgpt.site)
+
+![הטאבון הנודד — האש נדלקת, האירוע מתחיל](public/og.png)
+
+## מה יש באתר
+
+- הירו אינטראקטיבי עם טקס הדלקה, אנימציית Lottie וגיצים חיים.
+- תצוגת טאבון ממורכזת שנחתכת רספונסיבית לפי גודל המסך.
+- מסע בן שלושה שלבים: מגיעים, מדליקים ומגישים.
+- קומפוזר תפריט חלבי/בשרי עם בחירת תוספות ושליחה ל־WhatsApp.
+- קטגוריות אירועים וגלריות לפי בית, טבע ואולם.
+- שאלות נפוצות, פרטי קשר וקריאות לפעולה מותאמות מובייל.
+- תמיכה מלאה ב־RTL, ניווט מקלדת, `prefers-reduced-motion` ו־Save Data.
+
+## טכנולוגיות
+
+- React 19 + TypeScript
+- [Vinext](https://github.com/cloudflare/vinext) ו־Vite
+- CSS רספונסיבי ללא ספריית UI
+- Canvas 2D למערכת הגיצים
+- WebGL 2 לאפקט החום בדסקטופ
+- Lottie לאנימציית ההדלקה
+- OpenAI Sites / Cloudflare Worker לפריסה
+
+## דרישות
 
 - Node.js `>=22.13.0`
+- npm
 
-## Quick Start
+## הרצה מקומית
 
 ```bash
 npm install
 npm run dev
-npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+לאחר ההפעלה, פותחים את הכתובת שמודפסת בטרמינל.
 
-## Included Shape
+## פקודות שימושיות
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.
-
-The user ID is stable for the same user on the same Site and different across Sites. Email and name are intended for display or contact purposes.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("oai-authenticated-user-id");
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+npm run dev      # סביבת פיתוח
+npm run build    # בניית production
+npm test         # build + בדיקות חוזה ורינדור
+npm run lint     # בדיקות ESLint
+npm run start    # הפעלת build קיים
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+## מבנה הפרויקט
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+```text
+app/
+├── page.tsx          # התוכן, המצבים והאינטראקציות הראשיות
+├── globals.css       # מערכת העיצוב והרספונסיביות
+├── EmberField.tsx    # גיצים וחלקיקי אש ב־Canvas
+├── HeatHaze.tsx      # עיוות חום ב־WebGL
+├── LottieFlame.tsx   # אנימציית ההדלקה
+└── layout.tsx        # מטא־דאטה, שפה וכיוון כתיבה
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+public/
+├── brand/            # לוגואים, חותמות ואייקוני המותג
+├── campaign/         # תמונות הירו, תפריט, אירועים ופינאלה
+├── flame-ignition.json
+├── fire-story-filmstrip.webp
+└── og.png            # תמונת שיתוף לרשתות
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+tests/
+├── motion-contract.test.mjs
+└── rendered-html.test.mjs
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+.openai/hosting.json  # הגדרת פרויקט Sites
+```
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+## נכסים ומדיה
 
-## Useful Commands
+כל נכסי המותג שנדרשים להרצת האתר נשמרים בתוך `public/` ונכללים בפרויקט:
 
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+- לוגואים וחותמות: `public/brand/`
+- צילומי קמפיין ומנות: `public/campaign/`
+- אנימציית להבה: `public/flame-ignition.json`
+- תמונת שיתוף: `public/og.png`
 
-## Learn More
+האתר משתמש ב־WebP מותאם לרשת. קבצי המקור הגדולים אינם נדרשים להרצה ואינם אמורים להיכנס למאגר.
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+## מערכת התנועה והאש
+
+מערכת הגיצים עובדת דרך Canvas יחיד וקבוע. היא:
+
+- מגיבה להדלקה, למעברי מסע ולבחירת תפריט.
+- מפחיתה עומס במובייל ומגבילה את מספר החלקיקים.
+- נעצרת כשהטאב אינו גלוי.
+- מכבדת `prefers-reduced-motion` ו־Save Data.
+- משתמשת בגיצים חדים עם מעט blur כדי לשמור על ביצועים.
+
+אפקט החום של ההירו מופעל רק בדסקטופ ובמכשירים מתאימים.
+
+## מצב רספונסיבי והמשך מומלץ
+
+הדסקטופ הוא החוויה הבשלה ביותר. קיימת גרסת מובייל מלאה, אך מומלץ לבצע מעבר mobile-first ייעודי במקום להמשיך לצמצם את פריסת הדסקטופ.
+
+סדר העבודה המומלץ:
+
+1. לקצר את ההירו כך שהצילום, המסר וה־CTA הראשי ייכנסו לכ־85svh.
+2. להפוך את מסע שלושת השלבים ל־stepper אנכי פשוט במקום שילוב של sticky וגלילה אופקית.
+3. לקצר את קומפוזר התפריט: תמונה בגובה מוגבל, בחירות מייד אחריה ו־CTA קבוע בתוך הזרימה.
+4. לבטל מיקומים מוחלטים בטקסט של הפינאלה ולבנות אותו כצילום ולאחריו כרטיס תוכן.
+5. להוסיף התאמות נפרדות ל־360px, ל־390–430px ול־mobile landscape.
+6. לבדוק לפחות ב־iPhone SE, iPhone 14/15, Pixel וב־Android Chrome עם סרגלי דפדפן משתנים.
+
+## פריסה
+
+הפרויקט בנוי לפריסה דרך OpenAI Sites. מזהה הפרויקט נשמר ב־`.openai/hosting.json`; סודות או אסימוני גישה אינם נשמרים במאגר.
+
+לפני פריסה:
+
+```bash
+npm test
+```
+
+## זכויות
+
+© הטאבון הנודד. כל הזכויות שמורות.
+
+קוד האתר, הלוגואים, האיורים, התמונות והנכסים הממותגים אינם מורשים לשימוש חוזר או להפצה ללא אישור מפורש מבעלי המותג.
