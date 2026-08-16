@@ -2261,9 +2261,9 @@ h1, h2, h3, p { margin-top: 0; }
 }
 
 .site-is-dim .slogan-word {
-  opacity: 0.3;
+  opacity: 0.42;
   transform: translateY(10px);
-  filter: blur(2px);
+  filter: blur(1.5px);
   transition-delay: 0ms;
 }
 
