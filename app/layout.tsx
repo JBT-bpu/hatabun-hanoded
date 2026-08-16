@@ -35,8 +35,8 @@ export async function generateMetadata(): Promise<Metadata> {
       url: baseUrl,
       images: [
         {
-          url: new URL("/og.png", baseUrl),
-          width: 1672,
+          url: new URL("/og.jpg", baseUrl),
+          width: 1732,
           height: 909,
           alt: "הטאבון הנודד — האש נדלקת. האירוע מתחיל.",
         },
@@ -46,7 +46,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title: "הטאבון הנודד | האש נדלקת. האירוע מתחיל.",
       description: "טאבון נייד, אפייה מול האורחים וחוויה שאי אפשר להתעלם ממנה.",
-      images: [new URL("/og.png", baseUrl)],
+      images: [new URL("/og.jpg", baseUrl)],
     },
   };
 }
