@@ -51,6 +51,18 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "FoodEstablishment",
+  name: "הטאבון הנודד",
+  description: "טאבון נייד לאירועים — פוקאצ׳ות נאפות מול האורחים",
+  telephone: "+972-54-466-9111",
+  email: "hatabunhanoded@gmail.com",
+  areaServed: "ישראל",
+  servesCuisine: "פוקאצ׳ות מהטאבון",
+  url: "https://hatabunhanoded.co.il",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -58,7 +70,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="he" dir="rtl">
-      <body>{children}</body>
+      <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+        {children}
+      </body>
     </html>
   );
 }
