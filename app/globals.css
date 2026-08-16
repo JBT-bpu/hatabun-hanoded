@@ -743,7 +743,7 @@ h1, h2, h3, p { margin-top: 0; }
   align-items: center;
   gap: 34px;
   padding-inline: 34px;
-  animation: ticker 6s linear 1 both paused;
+  animation: ticker 6s linear infinite both paused;
 }
 
 .site-is-lit .poster-ticker > div { animation-play-state: running; }
