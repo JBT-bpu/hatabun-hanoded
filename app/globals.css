@@ -1779,7 +1779,19 @@ h1, h2, h3, p { margin-top: 0; }
     font-size: clamp(25px, 6.8vw, 38px);
     line-height: .96;
   }
-  .final-orange-copy { max-width: 100%; margin-bottom: 30px; font-size: 15px; }
+  .final-orange-copy {
+    position: absolute;
+    z-index: 4;
+    top: clamp(118px, 27vw, 155px);
+    right: 18px;
+    width: 45%;
+    max-width: none;
+    margin: 0;
+    color: rgba(242,228,198,.82);
+    font-size: clamp(10px, 2.4vw, 13px);
+    line-height: 1.55;
+    text-shadow: 0 3px 14px rgba(0,0,0,.9);
+  }
   .final-orange > a { width: 100%; min-height: 68px; }
   .final-contacts { margin-top: 30px; }
   .poster-footer { min-height: 120px; align-items: flex-start; flex-direction: column; justify-content: center; padding: 22px 20px; gap: 7px; }
