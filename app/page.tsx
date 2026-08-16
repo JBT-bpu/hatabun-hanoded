@@ -590,6 +590,7 @@ export default function Home() {
         <div className="poster-copy">
           <div className="poster-copy-inner">
             <div className="hero-brand-lockup">
+              <span className="hero-brand-orbit" aria-hidden="true"><i /></span>
               <BrandEmblem />
               <p className="poster-edition">מהדורת אירועים / 2026</p>
               <h1 id="hero-title" className="sr-only">הטאבון הנודד — טאבון נייד לאירועים</h1>
