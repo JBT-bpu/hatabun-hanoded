@@ -173,6 +173,7 @@ export default function Home() {
   const stepperFrameRef = useRef(0);
   const locationsFrameRef = useRef(0);
   const litRef = useRef(false);
+  const prefetchedRef = useRef(false);
   const chargingRef = useRef(false);
   const chargeFrameRef = useRef(0);
   const fizzleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -477,6 +478,28 @@ export default function Home() {
     });
   }
 
+  function prefetchBelowFoldImages() {
+    if (prefetchedRef.current) return;
+    prefetchedRef.current = true;
+    const schedule: (cb: () => void) => void =
+      typeof window.requestIdleCallback === "function"
+        ? window.requestIdleCallback
+        : (cb) => window.setTimeout(cb, 2000);
+    schedule(() => {
+      [
+        "/fire-story-filmstrip.webp",
+        "/campaign/menu-dairy.webp",
+        "/campaign/menu-meat.webp",
+      ].forEach((href) => {
+        const link = document.createElement("link");
+        link.rel = "prefetch";
+        link.as = "image";
+        link.href = href;
+        document.head.appendChild(link);
+      });
+    });
+  }
+
   function runIgnition() {
     if (ignitionTimerRef.current) {
       clearTimeout(ignitionTimerRef.current);
@@ -490,6 +513,7 @@ export default function Home() {
     setIgnitionHint(false);
     setIgnitionRun((current) => current + 1);
     rampHeat();
+    prefetchBelowFoldImages();
     if (prefersReducedMotion()) {
       setIgniting(false);
       return;
