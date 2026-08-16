@@ -293,8 +293,8 @@ export default function Home() {
           const finale = finalRef.current;
           finale?.setAttribute("data-arrived", "true");
           finale?.classList.add("is-arrived", "is-arriving");
-          finalArrivalTimerRef.current = setTimeout(() => finale?.classList.remove("is-arriving"), 460);
-          burst(".final-poster", window.matchMedia("(pointer: coarse)").matches ? 14 : 28, 0.96);
+          finalArrivalTimerRef.current = setTimeout(() => finale?.classList.remove("is-arriving"), 760);
+          burst(".final-poster", window.matchMedia("(pointer: coarse)").matches ? 18 : 40, 1.04);
           finaleObserver?.disconnect();
         }, { threshold: 0.34 })
       : null;
@@ -412,7 +412,7 @@ export default function Home() {
     if (!animate || prefersReducedMotion()) return;
     shell?.classList.add("is-stage-transitioning");
     setStageTransitionKey((current) => current + 1);
-    burst(".story-arch", window.matchMedia("(pointer: coarse)").matches ? 10 : 20, 0.88);
+    burst(".story-arch", window.matchMedia("(pointer: coarse)").matches ? 14 : 28, 0.96);
 
     if (stageTransitionTimerRef.current) clearTimeout(stageTransitionTimerRef.current);
     stageTransitionTimerRef.current = setTimeout(() => {
@@ -439,13 +439,13 @@ export default function Home() {
     ignitionFrameRef.current = requestAnimationFrame(() => {
       ignitionFrameRef.current = 0;
       setIgniting(true);
-      burst(".poster-photo", window.matchMedia("(pointer: coarse)").matches ? 20 : 42, 1.12);
+      burst(".poster-photo", window.matchMedia("(pointer: coarse)").matches ? 26 : 54, 1.2);
       ignitionEndTimerRef.current = setTimeout(() => setIgniting(false), 700);
     });
   }
 
   function chooseMode(mode: keyof typeof menus) {
-    if (mode !== menuMode && !prefersReducedMotion()) burst(".menu-photo", 16, 0.82);
+    if (mode !== menuMode && !prefersReducedMotion()) burst(".mode-switch", 20, 0.88);
     setMenuMode(mode);
     setSelected(menus[mode].options.slice(0, 3));
   }
@@ -603,7 +603,7 @@ export default function Home() {
               טאבון שמגיע אליכם, נדלק מול האורחים ומוציא פוקאצ׳ות חמות בדיוק כשהערב מתחיל לזוז.
             </p>
             <div className="poster-actions">
-              <a className="poster-cta" href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="28" data-ember-target=".poster-photo">
+              <a className="poster-cta" href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="36" data-ember-target=".poster-photo">
                 <span>הצעה לאירוע</span><i aria-hidden="true">↙</i>
               </a>
               <a className="poster-text-link" href="#experience">כנסו לחוויה <span aria-hidden="true">↓</span></a>
@@ -801,7 +801,7 @@ export default function Home() {
             href={menuHref}
             target="_blank"
             rel="noreferrer"
-            onClick={() => !prefersReducedMotion() && burst(".menu-photo", 22, 1)}
+            data-ember-burst="26"
           >
             שלחו את הכיוון לוואטסאפ <span aria-hidden="true">↙</span>
           </a>
@@ -832,8 +832,7 @@ export default function Home() {
               aria-label={`פתיחת גלריית אירועים ${category.title}`}
               onFocus={() => setActiveLocation(index)}
               onClick={(event) => openGallery(index, event.currentTarget)}
-              data-ember-burst="18"
-              data-ember-target=".events-brand-stage"
+              data-ember-burst="24"
             >
               <img
                 src={category.image}
@@ -940,7 +939,7 @@ export default function Home() {
           <span className="final-kicker">הטאבון הנודד / LIVE FIRE</span>
           <h2 id="final-title">יש אירוע באופק?<br />בואו ניתן לו <em>אש.</em></h2>
           <span className="final-orange-copy">אנחנו מגיעים, מדליקים ואופים מול האורחים. אתם נשארים עם ערב שאי אפשר לפספס.</span>
-          <a href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="32" data-ember-target=".final-poster">
+          <a href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="42" data-ember-target=".final-poster">
             <span>מדליקים את התאריך</span><i>↙</i>
           </a>
           <div className="final-contacts">

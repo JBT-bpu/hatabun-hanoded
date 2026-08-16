@@ -12,7 +12,7 @@ type Ember = {
   size: number;
   phase: number;
   depth: number;
-  kind: 0 | 1 | 2;
+  kind: 0 | 1 | 2 | 3;
   color: string;
 };
 
@@ -56,13 +56,16 @@ export default function EmberField({ lit }: { lit: boolean }) {
     let particles: Ember[] = [];
     let animationFrame = 0;
     let ignitionTimer = 0;
+    let ambientTimer = 0;
     let lastFrame = 0;
     let reducedMotion = reducedMotionQuery.matches;
     let pageHidden = document.hidden;
     let isLit = false;
+    const visibleSources = new Set<HTMLElement>();
+    const hoverCooldown = new WeakMap<HTMLElement, number>();
 
     const particleCap = () => {
-      const viewportCap = mobileQuery.matches ? 18 : 42;
+      const viewportCap = mobileQuery.matches ? 26 : 58;
       return connection?.saveData ? Math.min(viewportCap, 12) : viewportCap;
     };
 
@@ -117,10 +120,10 @@ export default function EmberField({ lit }: { lit: boolean }) {
       if (particles.length >= cap) particles.shift();
 
       const kindRoll = Math.random();
-      const kind: Ember["kind"] = kindRoll < 0.72 ? 0 : kindRoll < 0.9 ? 1 : 2;
+      const kind: Ember["kind"] = kindRoll < 0.6 ? 0 : kindRoll < 0.82 ? 1 : kindRoll < 0.93 ? 2 : 3;
       const depth = random(0.48, 1);
       const direction = random(-Math.PI * 0.92, -Math.PI * 0.08);
-      const speed = random(52, 164) * force * depth;
+      const speed = random(kind === 3 ? 74 : 52, kind === 3 ? 190 : 164) * force * depth;
 
       particles.push({
         x: origin.x + random(-9, 9),
@@ -128,12 +131,14 @@ export default function EmberField({ lit }: { lit: boolean }) {
         vx: Math.cos(direction) * speed + random(-12, 12),
         vy: Math.sin(direction) * speed - random(5, 22),
         age: 0,
-        life: random(kind === 2 ? 2.4 : 1.35, kind === 2 ? 4 : 3.15),
-        size: random(kind === 2 ? 0.7 : 0.9, kind === 2 ? 1.6 : 2.7) * depth,
+        life: kind === 3
+          ? random(0.82, 1.45)
+          : random(kind === 2 ? 2.4 : 1.35, kind === 2 ? 4 : 3.15),
+        size: random(kind === 2 ? 0.7 : kind === 3 ? 2.4 : 0.9, kind === 2 ? 1.6 : kind === 3 ? 4.8 : 2.7) * depth,
         phase: random(0, Math.PI * 2),
         depth,
         kind,
-        color: kind === 2 ? "#f1e7d2" : Math.random() > 0.38 ? "#ffb43e" : "#ff541b",
+        color: kind === 2 ? "#f1e7d2" : kind === 3 ? "#fff1c8" : Math.random() > 0.38 ? "#ffb43e" : "#ff541b",
       });
     }
 
@@ -157,6 +162,45 @@ export default function EmberField({ lit }: { lit: boolean }) {
       if (element) burstAt(pointFrom(element), count, intensity);
     }
 
+    function nearestVisibleSource() {
+      let closest: HTMLElement | null = null;
+      let closestDistance = Number.POSITIVE_INFINITY;
+      visibleSources.forEach((source) => {
+        if (!source.isConnected) {
+          visibleSources.delete(source);
+          return;
+        }
+        const rect = source.getBoundingClientRect();
+        if (rect.bottom <= 0 || rect.top >= height || rect.right <= 0 || rect.left >= width) return;
+        const distance = Math.abs(rect.top + rect.height * 0.5 - height * 0.5);
+        if (distance < closestDistance) {
+          closest = source;
+          closestDistance = distance;
+        }
+      });
+      return closest;
+    }
+
+    function stopAmbient() {
+      if (ambientTimer) window.clearTimeout(ambientTimer);
+      ambientTimer = 0;
+    }
+
+    function scheduleAmbient() {
+      stopAmbient();
+      if (!isLit || reducedMotion || pageHidden || connection?.saveData) return;
+      ambientTimer = window.setTimeout(runAmbient, random(820, 1380));
+    }
+
+    function runAmbient() {
+      ambientTimer = 0;
+      const source = nearestVisibleSource();
+      if (source && isLit && !reducedMotion && !pageHidden) {
+        burstFrom(source, mobileQuery.matches ? 1 : 2, 0.54);
+      }
+      scheduleAmbient();
+    }
+
     function drawParticle(particle: Ember) {
       const fadeIn = clamp(particle.age / 0.16, 0, 1);
       const fadeOut = Math.pow(clamp(1 - particle.age / particle.life, 0, 1), 1.32);
@@ -171,6 +215,23 @@ export default function EmberField({ lit }: { lit: boolean }) {
         context.moveTo(particle.x, particle.y);
         context.lineTo(particle.x - particle.vx * 0.035, particle.y - particle.vy * 0.035);
         context.stroke();
+        return;
+      }
+
+      if (particle.kind === 3) {
+        context.fillStyle = particle.color;
+        context.shadowBlur = 11 * particle.depth;
+        context.beginPath();
+        context.ellipse(
+          particle.x,
+          particle.y,
+          Math.max(0.8, particle.size * 0.52),
+          particle.size * 2.35,
+          Math.atan2(particle.vy, particle.vx) - Math.PI / 2,
+          0,
+          Math.PI * 2,
+        );
+        context.fill();
         return;
       }
 
@@ -226,6 +287,25 @@ export default function EmberField({ lit }: { lit: boolean }) {
       burstFrom(source, parsedCount, parsedIntensity);
     }
 
+    function onPointerOver(event: PointerEvent) {
+      if (!isLit || reducedMotion || pageHidden || mobileQuery.matches) return;
+      const target = event.target instanceof Element ? event.target : null;
+      const trigger = target?.closest<HTMLElement>("[data-ember-burst]");
+      if (!trigger) return;
+
+      const relatedTarget = event.relatedTarget;
+      if (relatedTarget instanceof Node && trigger.contains(relatedTarget)) return;
+      const now = performance.now();
+      if (now - (hoverCooldown.get(trigger) || 0) < 760) return;
+      hoverCooldown.set(trigger, now);
+
+      const parsedCount = Number.parseInt(trigger.dataset.emberBurst || "16", 10);
+      const parsedIntensity = Number.parseFloat(trigger.dataset.emberIntensity || "1.06");
+      const hoverCount = Math.max(4, Math.min(9, Math.round(parsedCount * 0.28)));
+      const source = findElement(trigger.dataset.emberTarget) || trigger;
+      burstFrom(source, hoverCount, Math.min(0.78, parsedIntensity * 0.68));
+    }
+
     function onFireBurst(event: Event) {
       const detail = (event as CustomEvent<FireBurstDetail>).detail || {};
       const hasCoordinates = Number.isFinite(detail.x) && Number.isFinite(detail.y);
@@ -239,12 +319,22 @@ export default function EmberField({ lit }: { lit: boolean }) {
 
     function onVisibilityChange() {
       pageHidden = document.hidden;
-      if (pageHidden) stopAndClear();
+      if (pageHidden) {
+        stopAmbient();
+        stopAndClear();
+      } else if (isLit) {
+        scheduleAmbient();
+      }
     }
 
     function onReducedMotionChange(event: MediaQueryListEvent) {
       reducedMotion = event.matches;
-      if (reducedMotion) stopAndClear();
+      if (reducedMotion) {
+        stopAmbient();
+        stopAndClear();
+      } else if (isLit) {
+        scheduleAmbient();
+      }
     }
 
     function scheduleIgnitionBurst() {
@@ -252,22 +342,41 @@ export default function EmberField({ lit }: { lit: boolean }) {
       ignitionTimer = window.setTimeout(() => {
         if (!isLit) return;
         const heroSource = document.querySelector<HTMLElement>("[data-ember-source='hero']");
-        burstFrom(heroSource, mobileQuery.matches ? 16 : 30, 1.12);
+        burstFrom(heroSource, mobileQuery.matches ? 22 : 42, 1.16);
       }, 180);
     }
+
+    const emberSources = Array.from(document.querySelectorAll<HTMLElement>("[data-ember-source]"));
+    const ambientObserver = typeof IntersectionObserver === "function"
+      ? new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            const source = entry.target as HTMLElement;
+            if (entry.isIntersecting) visibleSources.add(source);
+            else visibleSources.delete(source);
+          });
+        }, { threshold: 0.04 })
+      : null;
+    if (ambientObserver) emberSources.forEach((source) => ambientObserver.observe(source));
+    else emberSources.forEach((source) => visibleSources.add(source));
 
     controllerRef.current = {
       setLit(nextLit) {
         if (nextLit === isLit) return;
         isLit = nextLit;
         window.clearTimeout(ignitionTimer);
-        if (isLit) scheduleIgnitionBurst();
-        else stopAndClear();
+        if (isLit) {
+          scheduleIgnitionBurst();
+          scheduleAmbient();
+        } else {
+          stopAmbient();
+          stopAndClear();
+        }
       },
     };
 
     resize();
     document.addEventListener("click", onClick);
+    document.addEventListener("pointerover", onPointerOver, { passive: true });
     window.addEventListener("fire:burst", onFireBurst);
     window.addEventListener("resize", resize, { passive: true });
     document.addEventListener("visibilitychange", onVisibilityChange);
@@ -275,9 +384,13 @@ export default function EmberField({ lit }: { lit: boolean }) {
 
     return () => {
       window.clearTimeout(ignitionTimer);
+      stopAmbient();
       stopAndClear();
       controllerRef.current = null;
+      ambientObserver?.disconnect();
+      visibleSources.clear();
       document.removeEventListener("click", onClick);
+      document.removeEventListener("pointerover", onPointerOver);
       window.removeEventListener("fire:burst", onFireBurst);
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", onVisibilityChange);
