@@ -1959,9 +1959,13 @@ h1, h2, h3, p { margin-top: 0; }
   .stage-sticky { min-height: 0; height: auto; position: relative; overflow: visible; }
   .stage-sticky::after { display: none; }
   .stage-tabs { position: sticky; inset-block-start: 64px; background: rgba(9, 8, 7, .98); }
-  .stage-display { min-height: 0; height: auto; grid-template-columns: 1fr; grid-template-rows: minmax(220px, 38svh) auto; overflow: visible; }
+  /* Combined side-by-side layout: a small tilted "instant photo" of the
+     active stage sits beside its swipeable text panel in one compact row,
+     instead of two full-width blocks stacked with dead space between them. */
+  .stage-display { min-height: 0; height: auto; grid-template-columns: 38% 1fr; grid-template-rows: none; align-items: stretch; overflow: visible; }
   .stage-copy-stack {
-    grid-row: 2;
+    grid-row: 1;
+    grid-column: 2;
     min-height: 0;
     display: grid;
     grid-auto-flow: column;
@@ -1975,25 +1979,26 @@ h1, h2, h3, p { margin-top: 0; }
   .stage-copy-panel {
     position: relative;
     inset: auto;
-    min-height: 310px;
+    min-height: 250px;
     opacity: 1;
     transform: none;
     pointer-events: auto;
     scroll-snap-align: center;
     scroll-snap-stop: always;
   }
-  .stage-copy { align-self: stretch; display: flex; flex-direction: column; justify-content: center; padding: 34px 22px 30px; }
+  .stage-copy { align-self: stretch; display: flex; flex-direction: column; justify-content: center; padding: 18px 18px 22px 6px; }
   .story-filmstrip-layer,
   .stage-word-layer,
   .story-live-stack span { transition: opacity var(--motion-state) linear, transform var(--motion-state) var(--ease-state); }
-  .stage-copy > p { margin-bottom: 12px; }
-  .stage-copy h3 { margin-bottom: 13px; font-size: clamp(38px, 11.5vw, 52px); }
-  .stage-copy > span { font-size: 14px; line-height: 1.55; }
-  .story-progress { margin-top: 18px; }
-  .stage-visual { grid-row: 1; min-height: 220px; border-inline-end: 0; border-bottom: 1px solid var(--line-dark); }
-  .stage-arch { width: min(43%, 210px); box-shadow: 10px 10px 0 var(--orange); }
-  .stage-word { font-size: 40vw; }
-  .stage-display::after { width: 54px; filter: blur(8px); }
+  .stage-copy > p { margin-bottom: 9px; }
+  .stage-copy h3 { margin-bottom: 10px; font-size: clamp(28px, 8.6vw, 40px); }
+  .stage-copy > span { font-size: 13.5px; line-height: 1.55; }
+  .story-progress { margin-top: 14px; }
+  .stage-visual { grid-row: 1; grid-column: 1; min-height: 0; border-inline-end: 1px solid var(--line-dark); border-bottom: 0; padding-block: 18px 36px; }
+  .stage-arch { width: min(86%, 148px); box-shadow: 7px 7px 0 var(--orange); transform: rotate(-3deg); }
+  .stage-word { font-size: 26vw; }
+  .story-live-stack { inset-inline-end: 10px; inset-block-end: 10px; width: 76px; font-size: 9px; }
+  .stage-display::after { width: 34px; filter: blur(7px); }
 
   .menu-lab { grid-template-columns: 1fr; padding: 58px 12px 72px; }
   .menu-photo {
