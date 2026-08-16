@@ -67,7 +67,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
     const touchCooldown = new WeakMap<HTMLElement, number>();
 
     const particleCap = () => {
-      const viewportCap = mobileQuery.matches ? 34 : 58;
+      const viewportCap = mobileQuery.matches ? 42 : 72;
       return connection?.saveData ? Math.min(viewportCap, 12) : viewportCap;
     };
 
@@ -122,7 +122,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
       if (particles.length >= cap) particles.shift();
 
       const kindRoll = Math.random();
-      const kind: Ember["kind"] = kindRoll < 0.6 ? 0 : kindRoll < 0.82 ? 1 : kindRoll < 0.93 ? 2 : 3;
+      const kind: Ember["kind"] = kindRoll < 0.52 ? 0 : kindRoll < 0.8 ? 1 : kindRoll < 0.9 ? 2 : 3;
       const depth = random(0.48, 1);
       const direction = random(-Math.PI * 0.92, -Math.PI * 0.08);
       const speed = random(kind === 3 ? 74 : 52, kind === 3 ? 190 : 164) * force * depth;
@@ -191,7 +191,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
     function scheduleAmbient() {
       stopAmbient();
       if (!isLit || reducedMotion || pageHidden || connection?.saveData) return;
-      const delay = mobileQuery.matches ? random(660, 1080) : random(820, 1380);
+      const delay = mobileQuery.matches ? random(600, 960) : random(560, 900);
       ambientTimer = window.setTimeout(runAmbient, delay);
     }
 
@@ -199,7 +199,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
       ambientTimer = 0;
       const source = nearestVisibleSource();
       if (source && isLit && !reducedMotion && !pageHidden) {
-        burstFrom(source, 2, mobileQuery.matches ? 0.58 : 0.54);
+        burstFrom(source, mobileQuery.matches ? 3 : 4, mobileQuery.matches ? 0.6 : 0.56);
       }
       scheduleAmbient();
     }
@@ -209,7 +209,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
       const fadeOut = Math.pow(clamp(1 - particle.age / particle.life, 0, 1), 1.32);
       context.globalAlpha = fadeIn * fadeOut * particle.depth * (particle.kind === 2 ? 0.42 : 0.92);
       context.shadowColor = particle.color;
-      context.shadowBlur = particle.kind === 2 ? 0 : 5 * particle.depth;
+      context.shadowBlur = particle.kind === 2 ? 0 : particle.kind === 3 ? 4 * particle.depth : 1.5 * particle.depth;
 
       if (particle.kind === 1) {
         context.strokeStyle = particle.color;
@@ -223,7 +223,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
 
       if (particle.kind === 3) {
         context.fillStyle = particle.color;
-        context.shadowBlur = 11 * particle.depth;
+        context.shadowBlur = 5 * particle.depth;
         context.beginPath();
         context.ellipse(
           particle.x,
@@ -303,7 +303,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
 
       const parsedCount = Number.parseInt(trigger.dataset.emberBurst || "16", 10);
       const parsedIntensity = Number.parseFloat(trigger.dataset.emberIntensity || "1.06");
-      const touchCount = Math.max(8, Math.min(18, Math.round(parsedCount * 0.52)));
+      const touchCount = Math.max(10, Math.min(22, Math.round(parsedCount * 0.58)));
       const specifiedSource = findElement(trigger.dataset.emberTarget);
       const origin = specifiedSource
         ? pointFrom(specifiedSource)
@@ -327,7 +327,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
 
       const parsedCount = Number.parseInt(trigger.dataset.emberBurst || "16", 10);
       const parsedIntensity = Number.parseFloat(trigger.dataset.emberIntensity || "1.06");
-      const hoverCount = Math.max(4, Math.min(9, Math.round(parsedCount * 0.28)));
+      const hoverCount = Math.max(6, Math.min(12, Math.round(parsedCount * 0.34)));
       const source = findElement(trigger.dataset.emberTarget) || trigger;
       burstFrom(source, hoverCount, Math.min(0.78, parsedIntensity * 0.68));
     }
@@ -368,7 +368,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
       ignitionTimer = window.setTimeout(() => {
         if (!isLit) return;
         const heroSource = document.querySelector<HTMLElement>("[data-ember-source='hero']");
-        burstFrom(heroSource, mobileQuery.matches ? 30 : 42, 1.16);
+        burstFrom(heroSource, mobileQuery.matches ? 38 : 56, 1.16);
       }, 180);
     }
 

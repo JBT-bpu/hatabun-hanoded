@@ -294,7 +294,7 @@ export default function Home() {
           finale?.setAttribute("data-arrived", "true");
           finale?.classList.add("is-arrived", "is-arriving");
           finalArrivalTimerRef.current = setTimeout(() => finale?.classList.remove("is-arriving"), 760);
-          burst(".final-poster", window.matchMedia("(pointer: coarse)").matches ? 24 : 40, 1.04);
+          burst(".final-poster", window.matchMedia("(pointer: coarse)").matches ? 30 : 48, 1.04);
           finaleObserver?.disconnect();
         }, { threshold: 0.34 })
       : null;
@@ -412,7 +412,7 @@ export default function Home() {
     if (!animate || prefersReducedMotion()) return;
     shell?.classList.add("is-stage-transitioning");
     setStageTransitionKey((current) => current + 1);
-    burst(".story-arch", window.matchMedia("(pointer: coarse)").matches ? 18 : 28, 0.96);
+    burst(".story-arch", window.matchMedia("(pointer: coarse)").matches ? 24 : 36, 0.96);
 
     if (stageTransitionTimerRef.current) clearTimeout(stageTransitionTimerRef.current);
     stageTransitionTimerRef.current = setTimeout(() => {
@@ -439,18 +439,23 @@ export default function Home() {
     ignitionFrameRef.current = requestAnimationFrame(() => {
       ignitionFrameRef.current = 0;
       setIgniting(true);
-      burst(".poster-photo", window.matchMedia("(pointer: coarse)").matches ? 34 : 54, 1.2);
+      burst(".poster-photo", window.matchMedia("(pointer: coarse)").matches ? 42 : 68, 1.2);
       ignitionEndTimerRef.current = setTimeout(() => setIgniting(false), 700);
     });
   }
 
   function chooseMode(mode: keyof typeof menus) {
-    if (mode !== menuMode && !prefersReducedMotion()) burst(".mode-switch", 20, 0.88);
+    if (mode !== menuMode && !prefersReducedMotion()) {
+      burst(".menu-photo", window.matchMedia("(pointer: coarse)").matches ? 20 : 30, 0.9);
+    }
     setMenuMode(mode);
     setSelected(menus[mode].options.slice(0, 3));
   }
 
   function toggleIngredient(item: string) {
+    if (!prefersReducedMotion()) {
+      burst(".menu-photo", window.matchMedia("(pointer: coarse)").matches ? 14 : 22, 0.78);
+    }
     setSelected((current) =>
       current.includes(item) ? current.filter((value) => value !== item) : [...current, item],
     );
@@ -727,24 +732,8 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="brand-motif-rail" aria-label="סמלי המותג" data-enter>
-        {[
-          ["/brand/icon-flame-v2.png", "אש חיה"],
-          ["/brand/icon-wheat-v2.png", "בצק טרי"],
-          ["/brand/icon-peel-v2.png", "נאפה מולכם"],
-          ["/brand/icon-palm-v2.png", "מגיעים לכל מקום"],
-          ["/brand/icon-oven-v2.png", "הטאבון הנודד"],
-        ].map(([source, label], index) => (
-          <div className="brand-motif" key={source}>
-            <span>0{index + 1}</span>
-            <img src={source} alt="" aria-hidden="true" />
-            <p>{label}</p>
-          </div>
-        ))}
-      </section>
-
       <section className="menu-lab" id="menu" aria-labelledby="menu-title">
-        <div className="menu-photo" data-enter data-ember-zone data-ember-source="menu" data-ember-x="0.27" data-ember-y="0.53">
+        <div className="menu-photo" data-enter data-ember-zone data-ember-source="menu" data-ember-x="0.72" data-ember-y="0.38">
           <div className="menu-image-stack">
             {(Object.keys(menus) as Array<keyof typeof menus>).map((mode) => (
               <img
@@ -757,9 +746,22 @@ export default function Home() {
             ))}
           </div>
           <div className="menu-photo-shade" aria-hidden="true" />
-          <p className="menu-photo-title">בונים את הביס.</p>
+          <p className="menu-mode-stamp"><span>LIVE FIRE</span> / {menu.label}</p>
+          <div className="menu-motif-dock" aria-label="מה נכנס לחוויה">
+            {[
+              ["/brand/icon-wheat-v2.png", "בצק טרי"],
+              ["/brand/icon-peel-v2.png", "בוחרים"],
+              ["/brand/icon-flame-v2.png", "אש חיה"],
+              ["/brand/icon-oven-v2.png", "מגישים"],
+            ].map(([source, label], index) => (
+              <span className="menu-motif" key={source} data-active={index === Math.min(3, Math.max(0, selected.length - 1)) ? "true" : "false"}>
+                <img src={source} alt="" aria-hidden="true" />
+                <b>{label}</b>
+              </span>
+            ))}
+          </div>
           <div className="chosen-orbit" aria-live="polite">
-            {selected.slice(0, 5).map((item, index) => (
+            {selected.slice(0, 4).map((item, index) => (
               <span key={item} style={{ "--pos": index } as CSSProperties}>{item}</span>
             ))}
           </div>
@@ -767,9 +769,9 @@ export default function Home() {
         </div>
 
         <div className="menu-console" data-enter style={enterDelay(60)}>
-          <div className="section-index section-index-dark"><span>02</span><i /><p>המעבדה</p></div>
-          <p className="console-kicker">בחרו כיוון. שחקו עם האש.</p>
-          <h2 id="menu-title">מה יוצא<br />מהטאבון?</h2>
+          <div className="section-index section-index-dark"><span>02</span><i /><p>תפריט חי</p></div>
+          <p className="console-kicker">מה יוצא מהטאבון?</p>
+          <h2 id="menu-title">בונים<br /><em>את הביס.</em></h2>
           <div className="mode-switch" role="tablist" aria-label="סוג התפריט">
             {(Object.keys(menus) as Array<keyof typeof menus>).map((mode) => (
               <button
