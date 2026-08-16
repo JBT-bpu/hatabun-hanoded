@@ -3,20 +3,31 @@
 import { useEffect, useRef, useState } from "react";
 import type { AnimationItem } from "lottie-web";
 
-export default function LottieFlame({ active }: { active: boolean }) {
+type LottieFlameProps = {
+  active: boolean;
+  replayKey?: number | string;
+};
+
+export default function LottieFlame({ active, replayKey }: LottieFlameProps) {
   const hostRef = useRef<HTMLSpanElement>(null);
   const animationRef = useRef<AnimationItem | null>(null);
-  const activeRef = useRef(active);
+  const [motionAllowed, setMotionAllowed] = useState<boolean | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    activeRef.current = active;
-  }, [active]);
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setMotionAllowed(!reducedMotion.matches);
+    updatePreference();
+    reducedMotion.addEventListener("change", updatePreference);
+    return () => reducedMotion.removeEventListener("change", updatePreference);
+  }, []);
 
   useEffect(() => {
     const host = hostRef.current;
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (!host || reducedMotion.matches) return;
+    if (!host || motionAllowed !== true) {
+      setReady(false);
+      return;
+    }
 
     let cancelled = false;
     let animation: AnimationItem | null = null;
@@ -25,8 +36,11 @@ export default function LottieFlame({ active }: { active: boolean }) {
       if (cancelled || !animation) return;
       setReady(true);
       animation.setSpeed(1);
-      if (activeRef.current) animation.goToAndPlay(0, true);
-      else animation.goToAndStop(0, true);
+    };
+
+    const handleComplete = () => {
+      if (cancelled || !animation) return;
+      animation.goToAndStop(Math.max(0, animation.totalFrames - 1), true);
     };
 
     void (async () => {
@@ -43,7 +57,7 @@ export default function LottieFlame({ active }: { active: boolean }) {
         animation = lottieModule.default.loadAnimation({
           container: host,
           renderer: "svg",
-          loop: true,
+          loop: false,
           autoplay: false,
           animationData,
           rendererSettings: {
@@ -53,6 +67,7 @@ export default function LottieFlame({ active }: { active: boolean }) {
         });
         animationRef.current = animation;
         animation.addEventListener("DOMLoaded", handleReady);
+        animation.addEventListener("complete", handleComplete);
       } catch {
         if (!cancelled) setReady(false);
       }
@@ -61,17 +76,18 @@ export default function LottieFlame({ active }: { active: boolean }) {
     return () => {
       cancelled = true;
       animation?.removeEventListener("DOMLoaded", handleReady);
+      animation?.removeEventListener("complete", handleComplete);
       animation?.destroy();
       animationRef.current = null;
     };
-  }, []);
+  }, [motionAllowed]);
 
   useEffect(() => {
     const animation = animationRef.current;
     if (!ready || !animation) return;
     if (active) animation.goToAndPlay(0, true);
     else animation.goToAndStop(0, true);
-  }, [active, ready]);
+  }, [active, ready, replayKey]);
 
   return (
     <span

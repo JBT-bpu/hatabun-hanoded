@@ -18,97 +18,110 @@ type Ember = {
 
 type Point = { x: number; y: number };
 
+type FireBurstDetail = {
+  selector?: string;
+  count?: number;
+  intensity?: number;
+  x?: number;
+  y?: number;
+};
+
+type EmberController = {
+  setLit: (nextLit: boolean) => void;
+};
+
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const random = (min: number, max: number) => min + Math.random() * (max - min);
 
 export default function EmberField({ lit }: { lit: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const controllerRef = useRef<EmberController | null>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const canvasElement = canvasRef.current;
+    if (!canvasElement) return;
 
-    const context = canvas.getContext("2d");
-    if (!context) return;
+    const contextResult = canvasElement.getContext("2d");
+    if (!contextResult) return;
+    const canvas: HTMLCanvasElement = canvasElement;
+    const context: CanvasRenderingContext2D = contextResult;
 
-    context.clearRect(0, 0, canvas.width, canvas.height);
-
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!lit || reducedMotion) return;
-
-    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const mobileQuery = window.matchMedia("(max-width: 760px)");
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-    const lowPower = Boolean(connection?.saveData);
-    const maxParticles = lowPower ? 16 : coarsePointer ? 26 : 64;
-    const ambientRate = lowPower ? 2 : coarsePointer ? 4 : 11;
 
     let width = window.innerWidth;
     let height = window.innerHeight;
     let dpr = 1;
     let particles: Ember[] = [];
-    let zones: DOMRect[] = [];
-    let sources: HTMLElement[] = [];
-    let geometryDirty = true;
-    let lastFrame = performance.now();
-    let lastScroll = window.scrollY;
-    let scrollWind = 0;
-    let ambientBudget = 0;
     let animationFrame = 0;
-    let lastPointerSpark = 0;
-    let pointer = { x: -1000, y: -1000, vx: 0, vy: 0, time: performance.now() };
+    let ignitionTimer = 0;
+    let lastFrame = 0;
+    let reducedMotion = reducedMotionQuery.matches;
+    let pageHidden = document.hidden;
+    let isLit = false;
+
+    const particleCap = () => {
+      const viewportCap = mobileQuery.matches ? 18 : 42;
+      return connection?.saveData ? Math.min(viewportCap, 12) : viewportCap;
+    };
+
+    function clearCanvas() {
+      context.clearRect(0, 0, width, height);
+    }
+
+    function stopAndClear() {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+      animationFrame = 0;
+      particles = [];
+      clearCanvas();
+    }
 
     function resize() {
       width = window.innerWidth;
       height = window.innerHeight;
-      dpr = Math.min(window.devicePixelRatio || 1, coarsePointer ? 1 : 1.5);
+      dpr = Math.min(window.devicePixelRatio || 1, mobileQuery.matches ? 1 : 1.5);
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      geometryDirty = true;
-    }
 
-    function refreshGeometry() {
-      zones = Array.from(document.querySelectorAll<HTMLElement>("[data-ember-zone]"))
-        .map((element) => element.getBoundingClientRect())
-        .filter((rect) => rect.bottom > 0 && rect.top < height && rect.right > 0 && rect.left < width);
-      sources = Array.from(document.querySelectorAll<HTMLElement>("[data-ember-source]"));
-      geometryDirty = false;
+      const cap = particleCap();
+      if (particles.length > cap) particles = particles.slice(-cap);
     }
 
     function pointFrom(element: HTMLElement): Point {
       const rect = element.getBoundingClientRect();
-      const xRatio = Number.parseFloat(element.dataset.emberX || "0.5");
-      const yRatio = Number.parseFloat(element.dataset.emberY || "0.5");
+      const parsedX = Number.parseFloat(element.dataset.emberX || "0.5");
+      const parsedY = Number.parseFloat(element.dataset.emberY || "0.5");
+      const xRatio = Number.isFinite(parsedX) ? clamp(parsedX, 0, 1) : 0.5;
+      const yRatio = Number.isFinite(parsedY) ? clamp(parsedY, 0, 1) : 0.5;
       return {
         x: rect.left + rect.width * xRatio,
         y: rect.top + rect.height * yRatio,
       };
     }
 
-    function activeSource(): HTMLElement | null {
-      const visible = sources.filter((element) => {
-        const rect = element.getBoundingClientRect();
-        return rect.bottom > 0 && rect.top < height && rect.right > 0 && rect.left < width;
-      });
-      if (!visible.length) return null;
-      return visible.sort((first, second) => {
-        const a = first.getBoundingClientRect();
-        const b = second.getBoundingClientRect();
-        const aDistance = Math.abs(a.top + a.height / 2 - height / 2);
-        const bDistance = Math.abs(b.top + b.height / 2 - height / 2);
-        return aDistance - bDistance;
-      })[0];
+    function findElement(selector?: string) {
+      if (!selector) return null;
+      try {
+        return document.querySelector<HTMLElement>(selector);
+      } catch {
+        return null;
+      }
     }
 
-    function addEmber(origin: Point, force = 1, burst = false) {
-      if (particles.length >= maxParticles) particles.shift();
+    function addEmber(origin: Point, force: number) {
+      const cap = particleCap();
+      if (particles.length >= cap) particles.shift();
+
       const kindRoll = Math.random();
       const kind: Ember["kind"] = kindRoll < 0.72 ? 0 : kindRoll < 0.9 ? 1 : 2;
       const depth = random(0.48, 1);
-      const direction = burst ? random(-Math.PI * 0.92, -Math.PI * 0.08) : random(-2.05, -1.08);
-      const speed = random(burst ? 52 : 28, burst ? 164 : 92) * force * depth;
+      const direction = random(-Math.PI * 0.92, -Math.PI * 0.08);
+      const speed = random(52, 164) * force * depth;
+
       particles.push({
         x: origin.x + random(-9, 9),
         y: origin.y + random(-7, 7),
@@ -124,54 +137,24 @@ export default function EmberField({ lit }: { lit: boolean }) {
       });
     }
 
-    function burstAt(origin: Point, count: number, force = 1) {
-      const capped = Math.min(count, maxParticles);
-      for (let index = 0; index < capped; index += 1) addEmber(origin, force, true);
+    function startAnimation() {
+      if (animationFrame || !particles.length || reducedMotion || pageHidden) return;
+      lastFrame = performance.now();
+      animationFrame = requestAnimationFrame(frame);
     }
 
-    function burstFrom(element: HTMLElement | null, count: number, force = 1) {
-      if (!element) return;
-      burstAt(pointFrom(element), count, force);
+    function burstAt(origin: Point, requestedCount: number, requestedIntensity = 1) {
+      if (reducedMotion || pageHidden) return;
+
+      const cap = particleCap();
+      const count = clamp(Math.round(Number.isFinite(requestedCount) ? requestedCount : 16), 1, cap);
+      const intensity = clamp(Number.isFinite(requestedIntensity) ? requestedIntensity : 1, 0.2, 2);
+      for (let index = 0; index < count; index += 1) addEmber(origin, intensity);
+      startAnimation();
     }
 
-    function onClick(event: MouseEvent) {
-      const target = event.target instanceof HTMLElement ? event.target : null;
-      if (!target) return;
-      const trigger = target.closest<HTMLElement>("[data-ember-burst]");
-      if (trigger) {
-        const isTurningOff = trigger.dataset.emberToggle === "true" && trigger.getAttribute("aria-pressed") === "true";
-        if (isTurningOff) return;
-        const selector = trigger.dataset.emberTarget;
-        const source = selector ? document.querySelector<HTMLElement>(selector) : trigger;
-        burstFrom(source, Number.parseInt(trigger.dataset.emberBurst || "16", 10), 1.06);
-        return;
-      }
-
-      const zone = target.closest<HTMLElement>("[data-ember-zone]");
-      if (zone && !target.closest("a, button, summary")) burstAt({ x: event.clientX, y: event.clientY }, 5, 0.72);
-    }
-
-    function onPointerMove(event: PointerEvent) {
-      if (coarsePointer) return;
-      const now = performance.now();
-      const elapsed = Math.max(16, now - pointer.time);
-      const vx = ((event.clientX - pointer.x) / elapsed) * 1000;
-      const vy = ((event.clientY - pointer.y) / elapsed) * 1000;
-      pointer = { x: event.clientX, y: event.clientY, vx, vy, time: now };
-
-      const target = event.target instanceof HTMLElement ? event.target : null;
-      const overFire = target?.closest("[data-ember-zone]");
-      if (overFire && Math.hypot(vx, vy) > 850 && now - lastPointerSpark > 90 && particles.length < maxParticles) {
-        addEmber({ x: event.clientX, y: event.clientY }, 0.56, false);
-        lastPointerSpark = now;
-      }
-    }
-
-    function onScroll() {
-      const nextScroll = window.scrollY;
-      scrollWind = clamp((nextScroll - lastScroll) * 0.22, -32, 32);
-      lastScroll = nextScroll;
-      geometryDirty = true;
+    function burstFrom(element: HTMLElement | null, count: number, intensity = 1) {
+      if (element) burstAt(pointFrom(element), count, intensity);
     }
 
     function drawParticle(particle: Ember) {
@@ -198,99 +181,112 @@ export default function EmberField({ lit }: { lit: boolean }) {
     }
 
     function frame(now: number) {
-      const dt = Math.min(0.032, Math.max(0.001, (now - lastFrame) / 1000));
-      lastFrame = now;
-      if (geometryDirty) refreshGeometry();
-
-      const source = activeSource();
-      ambientBudget += dt * ambientRate;
-      while (source && ambientBudget >= 1 && particles.length < maxParticles) {
-        addEmber(pointFrom(source), 0.64, false);
-        ambientBudget -= 1;
+      animationFrame = 0;
+      if (reducedMotion || pageHidden) {
+        stopAndClear();
+        return;
       }
 
-      pointer.vx *= 0.9;
-      pointer.vy *= 0.9;
-      scrollWind *= 0.92;
-
+      const dt = Math.min(0.032, Math.max(0.001, (now - lastFrame) / 1000));
+      lastFrame = now;
       particles = particles.filter((particle) => {
         particle.age += dt;
         if (particle.age >= particle.life) return false;
 
-        const pointerDistance = Math.hypot(particle.x - pointer.x, particle.y - pointer.y);
-        if (pointerDistance < 230) {
-          const influence = 1 - pointerDistance / 230;
-          particle.vx += pointer.vx * influence * 0.0009;
-          particle.vy += pointer.vy * influence * 0.00035;
-        }
-
-        particle.vx += Math.sin(particle.phase + particle.age * 3.2) * 7 * dt + scrollWind * dt;
+        particle.vx += Math.sin(particle.phase + particle.age * 3.2) * 7 * dt;
         particle.vy -= 3.2 * dt;
         particle.x += particle.vx * dt;
         particle.y += particle.vy * dt;
         return particle.y > -40 && particle.x > -80 && particle.x < width + 80;
       });
 
-      context.clearRect(0, 0, width, height);
-      if (zones.length) {
+      clearCanvas();
+      if (particles.length) {
         context.save();
-        context.beginPath();
-        zones.forEach((rect) => context.rect(rect.left, rect.top, rect.width, rect.height));
-        context.clip();
         context.globalCompositeOperation = "lighter";
         particles.forEach(drawParticle);
         context.restore();
-      }
-
-      animationFrame = requestAnimationFrame(frame);
-    }
-
-    function onVisibilityChange() {
-      if (document.hidden) {
-        cancelAnimationFrame(animationFrame);
-      } else {
-        lastFrame = performance.now();
         animationFrame = requestAnimationFrame(frame);
       }
     }
 
+    function onClick(event: MouseEvent) {
+      const target = event.target instanceof Element ? event.target : null;
+      const trigger = target?.closest<HTMLElement>("[data-ember-burst]");
+      if (!trigger) return;
+
+      const toggle = trigger.dataset.emberToggle === "true";
+      const isTurningOff = toggle && trigger.getAttribute("aria-pressed") === "true";
+      const isTurningOn = toggle && !isTurningOff;
+      if (isTurningOff || (!isLit && !isTurningOn)) return;
+
+      const parsedCount = Number.parseInt(trigger.dataset.emberBurst || "16", 10);
+      const parsedIntensity = Number.parseFloat(trigger.dataset.emberIntensity || "1.06");
+      const source = findElement(trigger.dataset.emberTarget) || trigger;
+      burstFrom(source, parsedCount, parsedIntensity);
+    }
+
+    function onFireBurst(event: Event) {
+      const detail = (event as CustomEvent<FireBurstDetail>).detail || {};
+      const hasCoordinates = Number.isFinite(detail.x) && Number.isFinite(detail.y);
+      const origin = hasCoordinates
+        ? { x: detail.x as number, y: detail.y as number }
+        : detail.selector
+          ? pointFrom(findElement(detail.selector) || canvas)
+          : { x: width / 2, y: height / 2 };
+      burstAt(origin, detail.count ?? 16, detail.intensity ?? 1);
+    }
+
+    function onVisibilityChange() {
+      pageHidden = document.hidden;
+      if (pageHidden) stopAndClear();
+    }
+
+    function onReducedMotionChange(event: MediaQueryListEvent) {
+      reducedMotion = event.matches;
+      if (reducedMotion) stopAndClear();
+    }
+
+    function scheduleIgnitionBurst() {
+      window.clearTimeout(ignitionTimer);
+      ignitionTimer = window.setTimeout(() => {
+        if (!isLit) return;
+        const heroSource = document.querySelector<HTMLElement>("[data-ember-source='hero']");
+        burstFrom(heroSource, mobileQuery.matches ? 16 : 30, 1.12);
+      }, 180);
+    }
+
+    controllerRef.current = {
+      setLit(nextLit) {
+        if (nextLit === isLit) return;
+        isLit = nextLit;
+        window.clearTimeout(ignitionTimer);
+        if (isLit) scheduleIgnitionBurst();
+        else stopAndClear();
+      },
+    };
+
     resize();
-    refreshGeometry();
-    const entryTimer = window.setTimeout(() => {
-      const heroSource = document.querySelector<HTMLElement>("[data-ember-source='hero']");
-      burstFrom(heroSource, coarsePointer ? 18 : 36, 1.12);
-    }, 240);
-
-    const arrival = document.querySelector<HTMLElement>("[data-ember-arrival]");
-    let arrivalPlayed = false;
-    const arrivalObserver = arrival
-      ? new IntersectionObserver((entries) => {
-          if (!arrivalPlayed && entries.some((entry) => entry.isIntersecting)) {
-            arrivalPlayed = true;
-            burstFrom(arrival, coarsePointer ? 12 : 24, 0.92);
-          }
-        }, { threshold: 0.42 })
-      : null;
-    if (arrival && arrivalObserver) arrivalObserver.observe(arrival);
-
     document.addEventListener("click", onClick);
-    window.addEventListener("pointermove", onPointerMove, { passive: true });
-    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("fire:burst", onFireBurst);
     window.addEventListener("resize", resize, { passive: true });
     document.addEventListener("visibilitychange", onVisibilityChange);
-    animationFrame = requestAnimationFrame(frame);
+    reducedMotionQuery.addEventListener("change", onReducedMotionChange);
 
     return () => {
-      window.clearTimeout(entryTimer);
-      cancelAnimationFrame(animationFrame);
-      arrivalObserver?.disconnect();
+      window.clearTimeout(ignitionTimer);
+      stopAndClear();
+      controllerRef.current = null;
       document.removeEventListener("click", onClick);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("fire:burst", onFireBurst);
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", onVisibilityChange);
-      context.clearRect(0, 0, width, height);
+      reducedMotionQuery.removeEventListener("change", onReducedMotionChange);
     };
+  }, []);
+
+  useEffect(() => {
+    controllerRef.current?.setLit(lit);
   }, [lit]);
 
   return <canvas ref={canvasRef} className="ember-field" aria-hidden="true" />;

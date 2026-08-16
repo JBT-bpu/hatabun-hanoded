@@ -68,6 +68,12 @@ void main() {
   outputColor = vec4(color, 1.0);
 }`;
 
+type HeatController = {
+  setLit: (nextLit: boolean) => void;
+};
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
 function createShader(gl: WebGL2RenderingContext, type: number, source: string) {
   const shader = gl.createShader(type);
   if (!shader) return null;
@@ -82,31 +88,30 @@ function createShader(gl: WebGL2RenderingContext, type: number, source: string) 
 
 export default function HeatHaze({ src, lit }: { src: string; lit: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const litRef = useRef(lit);
+  const controllerRef = useRef<HeatController | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    litRef.current = lit;
-  }, [lit]);
+    const canvasElement = canvasRef.current;
+    const parentElement = canvasElement?.parentElement;
+    if (!canvasElement || !parentElement) return;
+    const canvas: HTMLCanvasElement = canvasElement;
+    const parent: HTMLElement = parentElement;
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const parent = canvas?.parentElement;
-    if (!canvas || !parent) return;
-
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-    if (reducedMotion || coarsePointer || connection?.saveData) return;
+    if (coarsePointer || connection?.saveData) return;
 
-    const gl = canvas.getContext("webgl2", {
+    const glResult = canvas.getContext("webgl2", {
       alpha: false,
       antialias: false,
       depth: false,
       powerPreference: "high-performance",
       preserveDrawingBuffer: false,
     });
-    if (!gl) return;
+    if (!glResult) return;
+    const gl: WebGL2RenderingContext = glResult;
 
     const vertex = createShader(gl, gl.VERTEX_SHADER, vertexShader);
     const fragment = createShader(gl, gl.FRAGMENT_SHADER, fragmentShader);
@@ -142,71 +147,175 @@ export default function HeatHaze({ src, lit }: { src: string; lit: boolean }) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
 
+    const frameInterval = 1000 / 30;
     let imageWidth = 1;
     let imageHeight = 1;
+    let imageLoaded = false;
     let animationFrame = 0;
+    let frameTimer = 0;
+    let lastRenderedAt = 0;
     let heat = 0;
     let pointer = { x: 0.78, y: 0.54 };
+    let bounds = parent.getBoundingClientRect();
+    let boundsDirty = false;
+    let visible = typeof IntersectionObserver !== "function";
+    let pageHidden = document.hidden;
+    let reducedMotion = reducedMotionQuery.matches;
+    let activeLit = false;
+    let canvasReady = false;
+    let disposed = false;
     const startedAt = performance.now();
 
-    function resize() {
-      const rect = parent.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.4);
-      const width = Math.max(1, Math.round(rect.width * dpr));
-      const height = Math.max(1, Math.round(rect.height * dpr));
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        gl.viewport(0, 0, width, height);
-      }
+    function setCanvasReady(nextReady: boolean) {
+      if (canvasReady === nextReady || disposed) return;
+      canvasReady = nextReady;
+      setReady(nextReady);
     }
 
-    function onPointerMove(event: PointerEvent) {
-      const rect = parent.getBoundingClientRect();
-      pointer = {
-        x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
-        y: 1 - Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)),
-      };
+    function updateCanvasSize(cssWidth: number, cssHeight: number) {
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.4);
+      const width = Math.max(1, Math.round(cssWidth * dpr));
+      const height = Math.max(1, Math.round(cssHeight * dpr));
+      if (canvas.width === width && canvas.height === height) return;
+      canvas.width = width;
+      canvas.height = height;
+      gl.viewport(0, 0, width, height);
+    }
+
+    function measureBounds() {
+      bounds = parent.getBoundingClientRect();
+      boundsDirty = false;
+      updateCanvasSize(bounds.width, bounds.height);
+    }
+
+    function canRender() {
+      return activeLit && visible && !pageHidden && !reducedMotion && imageLoaded;
+    }
+
+    function stopLoop(hideCanvas = false) {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+      if (frameTimer) window.clearTimeout(frameTimer);
+      animationFrame = 0;
+      frameTimer = 0;
+      if (hideCanvas) setCanvasReady(false);
+    }
+
+    function scheduleFrame(immediate = false) {
+      if (!canRender() || animationFrame || frameTimer) return;
+      const elapsed = performance.now() - lastRenderedAt;
+      const delay = immediate ? 0 : Math.max(0, frameInterval - elapsed);
+      frameTimer = window.setTimeout(() => {
+        frameTimer = 0;
+        animationFrame = requestAnimationFrame(render);
+      }, delay);
     }
 
     function render(now: number) {
-      resize();
-      const rect = parent.getBoundingClientRect();
-      const targetHeat = litRef.current ? 1 : 0;
-      heat += (targetHeat - heat) * 0.055;
+      animationFrame = 0;
+      if (!canRender()) return;
 
-      if (!document.hidden && rect.bottom > 0 && rect.top < window.innerHeight) {
-        gl.useProgram(program);
-        gl.uniform2f(resolution, canvas.width, canvas.height);
-        gl.uniform2f(textureSize, imageWidth, imageHeight);
-        gl.uniform2f(pointerUniform, pointer.x, pointer.y);
-        gl.uniform1f(timeUniform, (now - startedAt) / 1000);
-        gl.uniform1f(heatUniform, heat);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-      }
-
-      animationFrame = requestAnimationFrame(render);
+      heat = Math.min(1, heat + 0.12);
+      gl.useProgram(program);
+      gl.uniform2f(resolution, canvas.width, canvas.height);
+      gl.uniform2f(textureSize, imageWidth, imageHeight);
+      gl.uniform2f(pointerUniform, pointer.x, pointer.y);
+      gl.uniform1f(timeUniform, (now - startedAt) / 1000);
+      gl.uniform1f(heatUniform, heat);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      lastRenderedAt = now;
+      setCanvasReady(true);
+      scheduleFrame();
     }
+
+    function reconcile() {
+      if (canRender()) scheduleFrame(true);
+      else stopLoop(!activeLit || reducedMotion || pageHidden);
+    }
+
+    function onPointerMove(event: PointerEvent) {
+      if (boundsDirty) measureBounds();
+      if (bounds.width <= 0 || bounds.height <= 0) return;
+      pointer = {
+        x: clamp((event.clientX - bounds.left) / bounds.width, 0, 1),
+        y: 1 - clamp((event.clientY - bounds.top) / bounds.height, 0, 1),
+      };
+    }
+
+    function onScroll() {
+      boundsDirty = true;
+    }
+
+    function onVisibilityChange() {
+      pageHidden = document.hidden;
+      reconcile();
+    }
+
+    function onReducedMotionChange(event: MediaQueryListEvent) {
+      reducedMotion = event.matches;
+      if (reducedMotion) heat = 0;
+      reconcile();
+    }
+
+    const intersectionObserver = typeof IntersectionObserver === "function"
+      ? new IntersectionObserver((entries) => {
+          const entry = entries[0];
+          visible = Boolean(entry?.isIntersecting);
+          reconcile();
+        }, { threshold: 0.02 })
+      : null;
+    intersectionObserver?.observe(parent);
+
+    const resizeObserver = typeof ResizeObserver === "function"
+      ? new ResizeObserver((entries) => {
+          const rect = entries[0]?.contentRect;
+          if (rect) updateCanvasSize(rect.width, rect.height);
+          boundsDirty = true;
+        })
+      : null;
+    resizeObserver?.observe(parent);
+
+    controllerRef.current = {
+      setLit(nextLit) {
+        if (activeLit === nextLit) return;
+        activeLit = nextLit;
+        if (!activeLit) heat = 0;
+        reconcile();
+      },
+    };
 
     const image = new Image();
     image.decoding = "async";
     image.onload = () => {
+      if (disposed) return;
       imageWidth = image.naturalWidth;
       imageHeight = image.naturalHeight;
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-      setReady(true);
-      animationFrame = requestAnimationFrame(render);
+      imageLoaded = true;
+      measureBounds();
+      reconcile();
     };
     image.src = src;
 
     parent.addEventListener("pointermove", onPointerMove, { passive: true });
-    window.addEventListener("resize", resize, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", measureBounds, { passive: true });
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    reducedMotionQuery.addEventListener("change", onReducedMotionChange);
+    measureBounds();
 
     return () => {
-      cancelAnimationFrame(animationFrame);
+      disposed = true;
+      stopLoop();
+      controllerRef.current = null;
+      image.onload = null;
+      intersectionObserver?.disconnect();
+      resizeObserver?.disconnect();
       parent.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("resize", resize);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", measureBounds);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      reducedMotionQuery.removeEventListener("change", onReducedMotionChange);
       gl.deleteTexture(texture);
       gl.deleteBuffer(buffer);
       gl.deleteProgram(program);
@@ -214,6 +323,10 @@ export default function HeatHaze({ src, lit }: { src: string; lit: boolean }) {
       gl.deleteShader(fragment);
     };
   }, [src]);
+
+  useEffect(() => {
+    controllerRef.current?.setLit(lit);
+  }, [lit]);
 
   return <canvas ref={canvasRef} className={`heat-haze-canvas${ready ? " is-ready" : ""}`} aria-hidden="true" />;
 }

@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import EmberField from "./EmberField";
 import HeatHaze from "./HeatHaze";
 import LottieFlame from "./LottieFlame";
-import StoryCanvas from "./StoryCanvas";
 
 const whatsappBase = "https://wa.me/972544669111?text=";
 
@@ -89,8 +88,36 @@ const eventCategories = [
 const storyLayerStyle = (index: number) => ({
   "--stage-alpha": `var(--stage-${index}-alpha)`,
   "--stage-y": `var(--stage-${index}-y)`,
-  "--stage-blur": `var(--stage-${index}-blur)`,
+  "--stage-blur": "0px",
+  "--filmstrip-index": index,
 } as CSSProperties);
+
+const enterDelay = (delay: number) => ({ "--enter-delay": `${delay}ms` } as CSSProperties);
+
+type GalleryPhase = "enter" | "open" | "exit";
+type ViewTransitionDocument = Document & {
+  startViewTransition?: (update: () => void | Promise<void>) => unknown;
+};
+
+function prefersReducedMotion() {
+  return typeof window !== "undefined"
+    && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function withViewTransition(update: () => void) {
+  const transitionDocument = document as ViewTransitionDocument;
+  if (!prefersReducedMotion() && transitionDocument.startViewTransition) {
+    transitionDocument.startViewTransition(update);
+    return;
+  }
+  update();
+}
+
+function burst(selector: string, count: number, intensity = 1) {
+  window.dispatchEvent(new CustomEvent("fire:burst", {
+    detail: { selector, count, intensity },
+  }));
+}
 
 function BrandEmblem({ variant = "primary" }: { variant?: "primary" | "seal" }) {
   const source = variant === "primary"
@@ -111,155 +138,244 @@ function BrandEmblem({ variant = "primary" }: { variant?: "primary" | "seal" }) 
 
 export default function Home() {
   const [lit, setLit] = useState(false);
+  const [motionReady, setMotionReady] = useState(false);
+  const [igniting, setIgniting] = useState(false);
+  const [ignitionRun, setIgnitionRun] = useState(0);
   const [activeStage, setActiveStage] = useState(0);
+  const [stageTransitionKey, setStageTransitionKey] = useState(0);
   const [menuMode, setMenuMode] = useState<keyof typeof menus>("dairy");
   const [selected, setSelected] = useState<string[]>(["מוצרלה", "פסטו", "אנטיפסטי"]);
+  const [activeLocation, setActiveLocation] = useState(0);
   const [activeGallery, setActiveGallery] = useState<number | null>(null);
+  const [galleryPhase, setGalleryPhase] = useState<GalleryPhase>("enter");
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
   const heroRef = useRef<HTMLElement>(null);
   const stageShellRef = useRef<HTMLDivElement>(null);
+  const stageStepperRef = useRef<HTMLDivElement>(null);
+  const eventsGridRef = useRef<HTMLDivElement>(null);
+  const finalRef = useRef<HTMLElement>(null);
+  const galleryDialogRef = useRef<HTMLDivElement>(null);
+  const galleryCloseRef = useRef<HTMLButtonElement>(null);
+  const galleryTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const activeStageRef = useRef(0);
+  const galleryPhaseRef = useRef<GalleryPhase>("enter");
   const ignitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ignitionEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ignitionFrameRef = useRef(0);
+  const stageTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finalArrivalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const galleryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stepperFrameRef = useRef(0);
+  const locationsFrameRef = useRef(0);
   const menu = menus[menuMode];
   const gallery = activeGallery === null ? null : eventCategories[activeGallery];
 
+  const closeGallery = useCallback(() => {
+    if (activeGallery === null || galleryPhaseRef.current === "exit") return;
+    galleryPhaseRef.current = "exit";
+    setGalleryPhase("exit");
+    if (galleryTimerRef.current) clearTimeout(galleryTimerRef.current);
+    galleryTimerRef.current = setTimeout(() => {
+      withViewTransition(() => setActiveGallery(null));
+    }, prefersReducedMotion() ? 0 : 180);
+  }, [activeGallery]);
+
   useEffect(() => {
     const root = document.documentElement;
-    const revealElements = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let storyTarget = 0;
-    let storyCurrent = 0;
-    let storyFrame = 0;
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const enterElements = Array.from(document.querySelectorAll<HTMLElement>("[data-enter]"));
+    let reducedMotion = motionPreference.matches;
+    let scrollFrame = 0;
+    let readyFrame = 0;
     let storyInitialized = false;
 
-    const revealInView = () => {
-      revealElements.forEach((element) => {
-        if (element.classList.contains("is-visible")) return;
-        const rect = element.getBoundingClientRect();
-        if (rect.top < window.innerHeight * 0.92 && rect.bottom > 0) element.classList.add("is-visible");
-      });
-    };
+    const markEntered = (element: HTMLElement) => element.classList.add("is-entered");
+    const enterObserver = typeof IntersectionObserver === "function" && !reducedMotion
+      ? new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            markEntered(entry.target as HTMLElement);
+            enterObserver?.unobserve(entry.target);
+          });
+        }, { threshold: 0.08, rootMargin: "0px 0px -8% 0px" })
+      : null;
+
+    enterElements.forEach((element) => {
+      const rect = element.getBoundingClientRect();
+      if (reducedMotion || !enterObserver || (rect.top < window.innerHeight * 0.92 && rect.bottom > 0)) {
+        markEntered(element);
+      } else {
+        enterObserver.observe(element);
+      }
+    });
 
     const clamp = (value: number) => Math.min(1, Math.max(0, value));
-    const smootherstep = (start: number, end: number, value: number) => {
-      const amount = clamp((value - start) / (end - start));
-      return amount * amount * amount * (amount * (amount * 6 - 15) + 10);
-    };
 
     const paintStory = (progress: number) => {
       const shell = stageShellRef.current;
       if (!shell) return;
-      const phaseOne = smootherstep(0.18, 0.36, progress);
-      const phaseTwo = smootherstep(0.64, 0.82, progress);
-      const weights = [1 - phaseOne, phaseOne * (1 - phaseTwo), phaseTwo];
-      const coordinate = phaseOne + phaseTwo;
-      const heat = Math.max(
-        4 * phaseOne * (1 - phaseOne),
-        4 * phaseTwo * (1 - phaseTwo),
-      );
-      const centers = [0.09, 0.5, 0.91];
+      const coordinate = progress * (stages.length - 1);
+      const lowerStage = Math.floor(coordinate);
+      const upperStage = Math.min(stages.length - 1, lowerStage + 1);
+      const localProgress = coordinate - lowerStage;
+      const blend = lowerStage === upperStage ? 0 : clamp((localProgress - 0.42) / 0.16);
+      const weights = stages.map(() => 0);
+      weights[lowerStage] = 1 - blend;
+      weights[upperStage] += blend;
+      const heat = Math.min(1, Math.abs(coordinate - Math.round(coordinate)) * 2);
 
       shell.style.setProperty("--story-progress", String(progress));
       shell.style.setProperty("--story-coordinate", String(coordinate));
       shell.style.setProperty("--story-heat", String(heat));
-      shell.style.setProperty("--story-heat-opacity", String(0.06 + heat * 0.36));
+      shell.style.setProperty("--story-heat-opacity", String(heat * 0.34));
       shell.style.setProperty("--story-line", `${Math.max(0.01, progress) * 100}%`);
       shell.style.setProperty("--story-heat-x", `${(1 - progress) * 100}%`);
-      shell.style.setProperty("--story-scan-y", `${-28 + progress * 150}%`);
 
       weights.forEach((weight, index) => {
-        const distance = progress - centers[index];
+        const distance = coordinate - index;
         shell.style.setProperty(`--stage-${index}-alpha`, String(weight));
-        shell.style.setProperty(`--stage-${index}-y`, `${distance * 42}px`);
-        shell.style.setProperty(`--stage-${index}-blur`, `${(1 - weight) * 4}px`);
+        shell.style.setProperty(`--stage-${index}-y`, `${distance * 12}px`);
+        shell.style.setProperty(`--stage-${index}-blur`, "0px");
       });
 
       const nextStage = weights.indexOf(Math.max(...weights));
-      setActiveStage((current) => current === nextStage ? current : nextStage);
-    };
-
-    const renderStory = () => {
-      storyFrame = 0;
-      const distance = storyTarget - storyCurrent;
-      storyCurrent = reducedMotion || Math.abs(distance) < 0.0005
-        ? storyTarget
-        : storyCurrent + distance * 0.14;
-      paintStory(storyCurrent);
-      if (Math.abs(storyTarget - storyCurrent) >= 0.0005) {
-        storyFrame = requestAnimationFrame(renderStory);
+      if (nextStage !== activeStageRef.current) {
+        activateStage(nextStage, storyInitialized);
       }
-    };
-
-    const updateStory = () => {
-      const shell = stageShellRef.current;
-      if (!shell) return;
-      const rect = shell.getBoundingClientRect();
-      const travel = Math.max(1, rect.height - window.innerHeight);
-      storyTarget = clamp(-rect.top / travel);
-      if (!storyInitialized) {
-        storyCurrent = storyTarget;
-        storyInitialized = true;
-        paintStory(storyCurrent);
-        return;
-      }
-      if (!storyFrame) storyFrame = requestAnimationFrame(renderStory);
+      storyInitialized = true;
     };
 
     const updateScroll = () => {
-      const max = document.body.scrollHeight - window.innerHeight;
+      scrollFrame = 0;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
       root.style.setProperty("--scroll", max > 0 ? String(window.scrollY / max) : "0");
+
       const hero = heroRef.current;
       if (hero) {
         const rect = hero.getBoundingClientRect();
         const progress = clamp(-rect.top / Math.max(1, rect.height));
-        const parallax = reducedMotion ? 0 : 12 - progress * 24;
+        const parallax = reducedMotion ? 0 : 4 - progress * 8;
         hero.style.setProperty("--hero-parallax-y", `${parallax}px`);
       }
-      revealInView();
-      updateStory();
-    };
-    updateScroll();
-    window.addEventListener("scroll", updateScroll, { passive: true });
-    window.addEventListener("resize", updateScroll, { passive: true });
 
-    const observer = typeof IntersectionObserver === "function"
-      ? new IntersectionObserver(
-          (entries) => entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("is-visible");
-              observer?.unobserve(entry.target);
-            }
-          }),
-          { threshold: 0.08 },
-        )
+      const shell = stageShellRef.current;
+      if (shell && !window.matchMedia("(max-width: 760px)").matches) {
+        const rect = shell.getBoundingClientRect();
+        const travel = Math.max(1, rect.height - window.innerHeight);
+        paintStory(clamp(-rect.top / travel));
+      }
+    };
+
+    const scheduleScrollUpdate = () => {
+      if (!scrollFrame) scrollFrame = requestAnimationFrame(updateScroll);
+    };
+
+    const handleMotionPreference = () => {
+      reducedMotion = motionPreference.matches;
+      if (reducedMotion) enterElements.forEach(markEntered);
+      scheduleScrollUpdate();
+    };
+
+    readyFrame = requestAnimationFrame(() => {
+      root.classList.add("motion-ready");
+      setMotionReady(true);
+    });
+    scheduleScrollUpdate();
+    window.addEventListener("scroll", scheduleScrollUpdate, { passive: true });
+    window.addEventListener("resize", scheduleScrollUpdate, { passive: true });
+    motionPreference.addEventListener("change", handleMotionPreference);
+
+    let finalePlayed = false;
+    const finaleObserver = typeof IntersectionObserver === "function" && finalRef.current
+      ? new IntersectionObserver((entries) => {
+          if (finalePlayed || !entries.some((entry) => entry.isIntersecting)) return;
+          finalePlayed = true;
+          const finale = finalRef.current;
+          finale?.setAttribute("data-arrived", "true");
+          finale?.classList.add("is-arrived", "is-arriving");
+          finalArrivalTimerRef.current = setTimeout(() => finale?.classList.remove("is-arriving"), 460);
+          burst(".final-poster", window.matchMedia("(pointer: coarse)").matches ? 14 : 28, 0.96);
+          finaleObserver?.disconnect();
+        }, { threshold: 0.34 })
       : null;
-    revealElements.forEach((element) => observer?.observe(element));
+    if (finaleObserver && finalRef.current) {
+      finaleObserver.observe(finalRef.current);
+    } else {
+      finalRef.current?.setAttribute("data-arrived", "true");
+      finalRef.current?.classList.add("is-arrived");
+    }
 
     return () => {
-      window.removeEventListener("scroll", updateScroll);
-      window.removeEventListener("resize", updateScroll);
-      if (storyFrame) cancelAnimationFrame(storyFrame);
-      observer?.disconnect();
+      window.removeEventListener("scroll", scheduleScrollUpdate);
+      window.removeEventListener("resize", scheduleScrollUpdate);
+      motionPreference.removeEventListener("change", handleMotionPreference);
+      root.classList.remove("motion-ready");
+      if (scrollFrame) cancelAnimationFrame(scrollFrame);
+      if (readyFrame) cancelAnimationFrame(readyFrame);
+      if (stepperFrameRef.current) cancelAnimationFrame(stepperFrameRef.current);
+      if (locationsFrameRef.current) cancelAnimationFrame(locationsFrameRef.current);
+      if (ignitionFrameRef.current) cancelAnimationFrame(ignitionFrameRef.current);
+      if (stageTransitionTimerRef.current) clearTimeout(stageTransitionTimerRef.current);
+      if (finalArrivalTimerRef.current) clearTimeout(finalArrivalTimerRef.current);
+      enterObserver?.disconnect();
+      finaleObserver?.disconnect();
     };
   }, []);
 
   useEffect(() => {
     if (activeGallery === null) return;
     const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setActiveGallery(null);
+    const focusableSelector = "a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])";
+    const handleDialogKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeGallery();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const dialog = galleryDialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector))
+        .filter((element) => !element.hasAttribute("hidden"));
+      if (!focusable.length) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
+
     document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", closeOnEscape);
+    window.addEventListener("keydown", handleDialogKeyDown);
+    const focusFrame = requestAnimationFrame(() => {
+      if (galleryPhaseRef.current === "exit") return;
+      galleryCloseRef.current?.focus();
+      galleryPhaseRef.current = "open";
+      setGalleryPhase("open");
+    });
+
     return () => {
+      cancelAnimationFrame(focusFrame);
       document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", closeOnEscape);
+      window.removeEventListener("keydown", handleDialogKeyDown);
+      galleryTriggerRef.current?.focus({ preventScroll: true });
     };
-  }, [activeGallery]);
+  }, [activeGallery, closeGallery]);
 
   useEffect(() => {
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    ignitionTimerRef.current = setTimeout(() => setLit(true), reducedMotion ? 0 : 620);
+    ignitionTimerRef.current = setTimeout(() => runIgnition(), prefersReducedMotion() ? 0 : 620);
     return () => {
       if (ignitionTimerRef.current) clearTimeout(ignitionTimerRef.current);
+      if (ignitionEndTimerRef.current) clearTimeout(ignitionEndTimerRef.current);
+      if (galleryTimerRef.current) clearTimeout(galleryTimerRef.current);
     };
   }, []);
 
@@ -270,19 +386,66 @@ export default function Home() {
 
   const mainWhatsapp = `${whatsappBase}${encodeURIComponent("היי הטאבון הנודד, אשמח לקבל הצעה לאירוע")}`;
 
-  function moveHeat(event: React.PointerEvent<HTMLElement>) {
-    const element = heroRef.current;
-    if (!element) return;
-    const rect = element.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / rect.width;
-    const y = (event.clientY - rect.top) / rect.height;
-    element.style.setProperty("--mx", `${event.clientX - rect.left}px`);
-    element.style.setProperty("--my", `${event.clientY - rect.top}px`);
-    element.style.setProperty("--px", String(x - 0.5));
-    element.style.setProperty("--py", String(y - 0.5));
+  function activateStage(index: number, animate = true, force = false) {
+    const changed = activeStageRef.current !== index;
+    if (!changed && !force) return;
+
+    activeStageRef.current = index;
+    setActiveStage(index);
+
+    const shell = stageShellRef.current;
+    if (shell && window.matchMedia("(max-width: 760px)").matches) {
+      const progress = index / Math.max(1, stages.length - 1);
+      shell.style.setProperty("--story-progress", String(progress));
+      shell.style.setProperty("--story-coordinate", String(index));
+      shell.style.setProperty("--story-line", `${Math.max(0.01, progress) * 100}%`);
+      shell.style.setProperty("--story-heat-x", `${(1 - progress) * 100}%`);
+      shell.style.setProperty("--story-heat", "0");
+      shell.style.setProperty("--story-heat-opacity", "0");
+      stages.forEach((_, stageIndex) => {
+        shell.style.setProperty(`--stage-${stageIndex}-alpha`, stageIndex === index ? "1" : "0");
+        shell.style.setProperty(`--stage-${stageIndex}-y`, `${(index - stageIndex) * 12}px`);
+        shell.style.setProperty(`--stage-${stageIndex}-blur`, "0px");
+      });
+    }
+
+    if (!animate || prefersReducedMotion()) return;
+    shell?.classList.add("is-stage-transitioning");
+    setStageTransitionKey((current) => current + 1);
+    burst(".story-arch", window.matchMedia("(pointer: coarse)").matches ? 10 : 20, 0.88);
+
+    if (stageTransitionTimerRef.current) clearTimeout(stageTransitionTimerRef.current);
+    stageTransitionTimerRef.current = setTimeout(() => {
+      stageShellRef.current?.classList.remove("is-stage-transitioning");
+    }, 420);
+  }
+
+  function runIgnition() {
+    if (ignitionTimerRef.current) {
+      clearTimeout(ignitionTimerRef.current);
+      ignitionTimerRef.current = null;
+    }
+    if (ignitionEndTimerRef.current) clearTimeout(ignitionEndTimerRef.current);
+    if (ignitionFrameRef.current) cancelAnimationFrame(ignitionFrameRef.current);
+
+    setLit(true);
+    setIgnitionRun((current) => current + 1);
+    if (prefersReducedMotion()) {
+      setIgniting(false);
+      return;
+    }
+
+    setIgniting(false);
+    ignitionFrameRef.current = requestAnimationFrame(() => {
+      ignitionFrameRef.current = 0;
+      setIgniting(true);
+      burst(".poster-photo", window.matchMedia("(pointer: coarse)").matches ? 20 : 42, 1.12);
+      ignitionEndTimerRef.current = setTimeout(() => setIgniting(false), 700);
+    });
   }
 
   function chooseMode(mode: keyof typeof menus) {
+    if (mode !== menuMode && !prefersReducedMotion()) burst(".menu-photo", 16, 0.82);
     setMenuMode(mode);
     setSelected(menus[mode].options.slice(0, 3));
   }
@@ -293,26 +456,79 @@ export default function Home() {
     );
   }
 
-  function toggleFire() {
-    if (ignitionTimerRef.current) {
-      clearTimeout(ignitionTimerRef.current);
-      ignitionTimerRef.current = null;
-    }
-    setLit((value) => !value);
-  }
-
   function goToStage(index: number) {
-    const shell = stageShellRef.current;
-    if (!shell) {
-      setActiveStage(index);
+    activateStage(index, true, true);
+
+    if (window.matchMedia("(max-width: 760px)").matches) {
+      document.getElementById(`story-panel-${index}`)?.scrollIntoView({
+        behavior: "auto",
+        block: "nearest",
+        inline: "center",
+      });
       return;
     }
+
+    const shell = stageShellRef.current;
+    if (!shell) return;
     const top = window.scrollY + shell.getBoundingClientRect().top;
     const travel = Math.max(0, shell.offsetHeight - window.innerHeight);
-    const centers = [0.09, 0.5, 0.91];
-    const target = top + centers[index] * travel;
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.scrollTo({ top: target, behavior: reducedMotion ? "auto" : "smooth" });
+    const target = top + (index / Math.max(1, stages.length - 1)) * travel;
+    window.scrollTo({ top: target, behavior: "auto" });
+  }
+
+  function handleStageStepperScroll() {
+    if (!window.matchMedia("(max-width: 760px)").matches || stepperFrameRef.current) return;
+    stepperFrameRef.current = requestAnimationFrame(() => {
+      stepperFrameRef.current = 0;
+      const stepper = stageStepperRef.current;
+      if (!stepper) return;
+      const center = stepper.getBoundingClientRect().left + stepper.clientWidth / 2;
+      const panels = Array.from(stepper.querySelectorAll<HTMLElement>(".stage-copy-panel"));
+      const closest = panels.reduce((best, panel, index) => {
+        const rect = panel.getBoundingClientRect();
+        const distance = Math.abs(rect.left + rect.width / 2 - center);
+        return distance < best.distance ? { index, distance } : best;
+      }, { index: activeStageRef.current, distance: Number.POSITIVE_INFINITY });
+      activateStage(closest.index, true);
+    });
+  }
+
+  function handleLocationsScroll() {
+    if (locationsFrameRef.current) return;
+    locationsFrameRef.current = requestAnimationFrame(() => {
+      locationsFrameRef.current = 0;
+      const grid = eventsGridRef.current;
+      if (!grid) return;
+      const center = grid.getBoundingClientRect().left + grid.clientWidth / 2;
+      const cards = Array.from(grid.querySelectorAll<HTMLElement>(".event-card"));
+      const closest = cards.reduce((best, card, index) => {
+        const rect = card.getBoundingClientRect();
+        const distance = Math.abs(rect.left + rect.width / 2 - center);
+        return distance < best.distance ? { index, distance } : best;
+      }, { index: 0, distance: Number.POSITIVE_INFINITY });
+      setActiveLocation((current) => current === closest.index ? current : closest.index);
+    });
+  }
+
+  function goToLocation(index: number) {
+    setActiveLocation(index);
+    const card = eventsGridRef.current?.querySelectorAll<HTMLElement>(".event-card")[index];
+    card?.scrollIntoView({ behavior: "auto", block: "nearest", inline: "center" });
+  }
+
+  function openGallery(index: number, trigger: HTMLButtonElement) {
+    if (galleryTimerRef.current) clearTimeout(galleryTimerRef.current);
+    galleryTriggerRef.current = trigger;
+    galleryPhaseRef.current = "enter";
+    setActiveLocation(index);
+    withViewTransition(() => {
+      setGalleryPhase("enter");
+      setActiveGallery(index);
+    });
+  }
+
+  function toggleFaq(index: number) {
+    setOpenFaq((current) => current === index ? null : index);
   }
 
   function handleStageKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, index: number) {
@@ -328,7 +544,10 @@ export default function Home() {
   }
 
   return (
-    <main className={lit ? "site-is-lit" : "site-is-dim"}>
+    <main
+      className={`${lit ? "site-is-lit" : "site-is-dim"}${motionReady ? " motion-ready" : ""}${igniting ? " site-is-igniting" : ""}`}
+      data-ignition-run={ignitionRun}
+    >
       <EmberField lit={lit} />
       <a className="skip-link" href="#experience">דילוג לתוכן</a>
       <div className="scroll-progress" aria-hidden="true" />
@@ -337,7 +556,6 @@ export default function Home() {
         ref={heroRef}
         className="poster-hero"
         id="top"
-        onPointerMove={moveHeat}
         aria-labelledby="hero-title"
         data-ember-zone
       >
@@ -366,7 +584,6 @@ export default function Home() {
           </picture>
           <HeatHaze src="/campaign/hero-desktop.webp" lit={lit} />
           <div className="photo-vignette" aria-hidden="true" />
-          <div className="heat-cursor" aria-hidden="true" />
           <p className="photo-stamp"><span>LIVE FIRE</span> / <b>01</b></p>
         </div>
 
@@ -397,15 +614,12 @@ export default function Home() {
         <button
           className="ignition"
           type="button"
-          aria-pressed={lit}
-          aria-label={lit ? "כיבוי האש באתר" : "הדלקת האש באתר"}
-          onClick={toggleFire}
-          data-ember-burst="42"
-          data-ember-toggle="true"
+          aria-label={lit ? "הפעלת רצף ההדלקה מחדש" : "הדלקת האש באתר"}
+          onClick={runIgnition}
         >
-          <LottieFlame active={lit} />
-          <b>{lit ? "בוער" : "הדליקו"}</b>
-          <small>{lit ? "לחצו לכיבוי" : "לחצו לאש"}</small>
+          <LottieFlame active={lit} replayKey={ignitionRun} />
+          <b>{lit ? "שוב" : "הדליקו"}</b>
+          <small>{lit ? "הדליקו מחדש" : "לחצו לאש"}</small>
         </button>
 
         <div className="poster-ticker" aria-label="יתרונות">
@@ -418,17 +632,17 @@ export default function Home() {
       </section>
 
       <section className="theater section-dark" id="experience" aria-labelledby="experience-title" data-ember-zone>
-        <div className="section-index" data-reveal>
+        <div className="section-index" data-enter>
           <span>01</span><i /> <p>תיאטרון האש</p>
         </div>
-        <header className="editorial-heading" data-reveal>
+        <header className="editorial-heading" data-enter style={enterDelay(50)}>
           <p>לא עוד “עמדת אוכל”</p>
           <h2 id="experience-title">שלושה רגעים.<br /><em>שואו אחד.</em></h2>
         </header>
 
         <div ref={stageShellRef} className="stage-shell story-scroll">
           <div className="stage-sticky">
-            <div className="stage-tabs" role="tablist" aria-label="שלבי החוויה" data-reveal>
+            <div className="stage-tabs" role="tablist" aria-label="שלבי החוויה" data-enter style={enterDelay(100)}>
               {stages.map((stage, index) => (
                 <button
                   key={stage.number}
@@ -440,8 +654,6 @@ export default function Home() {
                   tabIndex={activeStage === index ? 0 : -1}
                   onClick={() => goToStage(index)}
                   onKeyDown={(event) => handleStageKeyDown(event, index)}
-                  data-ember-burst="22"
-                  data-ember-target=".story-arch"
                 >
                   <span>{stage.number}</span>
                   <b>{stage.tab}</b>
@@ -451,7 +663,7 @@ export default function Home() {
             </div>
 
             <div className="stage-display">
-              <div className="stage-copy-stack">
+              <div ref={stageStepperRef} className="stage-copy-stack" onScroll={handleStageStepperScroll}>
                 {stages.map((stage, index) => (
                   <article
                     key={stage.number}
@@ -490,9 +702,18 @@ export default function Home() {
                   data-ember-x="0.5"
                   data-ember-y="0.48"
                 >
-                  <StoryCanvas />
+                  <div className="story-filmstrip" aria-hidden="true">
+                    {stages.map((filmStage, index) => (
+                      <span
+                        key={filmStage.number}
+                        className="story-filmstrip-layer"
+                        data-stage-index={index}
+                        style={storyLayerStyle(index)}
+                      />
+                    ))}
+                  </div>
                   <div className="stage-flare" />
-                  <span className="story-scanline" />
+                  <span key={stageTransitionKey} className="story-heat-wipe" />
                 </div>
                 <p className="story-live-stack">
                   {stages.map((stage, index) => (
@@ -505,7 +726,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="brand-motif-rail" aria-label="סמלי המותג" data-reveal>
+      <section className="brand-motif-rail" aria-label="סמלי המותג" data-enter>
         {[
           ["/brand/icon-flame-v2.png", "אש חיה"],
           ["/brand/icon-wheat-v2.png", "בצק טרי"],
@@ -522,7 +743,7 @@ export default function Home() {
       </section>
 
       <section className="menu-lab" id="menu" aria-labelledby="menu-title">
-        <div className="menu-photo" data-reveal data-ember-zone data-ember-source="menu" data-ember-x="0.27" data-ember-y="0.53">
+        <div className="menu-photo" data-enter data-ember-zone data-ember-source="menu" data-ember-x="0.27" data-ember-y="0.53">
           <div className="menu-image-stack">
             {(Object.keys(menus) as Array<keyof typeof menus>).map((mode) => (
               <img
@@ -544,7 +765,7 @@ export default function Home() {
           <span className="menu-counter"><bdi>{String(selected.length).padStart(2, "0")}</bdi> / תוספות</span>
         </div>
 
-        <div className="menu-console" data-reveal>
+        <div className="menu-console" data-enter style={enterDelay(60)}>
           <div className="section-index section-index-dark"><span>02</span><i /><p>המעבדה</p></div>
           <p className="console-kicker">בחרו כיוון. שחקו עם האש.</p>
           <h2 id="menu-title">מה יוצא<br />מהטאבון?</h2>
@@ -556,8 +777,6 @@ export default function Home() {
                 role="tab"
                 aria-selected={menuMode === mode}
                 onClick={() => chooseMode(mode)}
-                data-ember-burst="16"
-                data-ember-target=".menu-photo"
               >
                 {menus[mode].label}
               </button>
@@ -572,14 +791,18 @@ export default function Home() {
                 className={selected.includes(item) ? "is-selected" : ""}
                 aria-pressed={selected.includes(item)}
                 onClick={() => toggleIngredient(item)}
-                data-ember-burst="7"
-                data-ember-target=".menu-photo"
               >
                 <span>{selected.includes(item) ? "−" : "+"}</span>{item}
               </button>
             ))}
           </div>
-          <a className="menu-submit" href={menuHref} target="_blank" rel="noreferrer">
+          <a
+            className="menu-submit"
+            href={menuHref}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => !prefersReducedMotion() && burst(".menu-photo", 22, 1)}
+          >
             שלחו את הכיוון לוואטסאפ <span aria-hidden="true">↙</span>
           </a>
           <small>הבחירה כאן היא השראה — את התפריט הסופי סוגרים יחד.</small>
@@ -587,19 +810,19 @@ export default function Home() {
       </section>
 
       <section className="events section-dark" id="events" aria-labelledby="events-title" data-ember-zone>
-        <div className="section-index" data-reveal><span>03</span><i /><p>הלוקיישן שלכם</p></div>
-        <header className="events-heading" data-reveal>
+        <div className="section-index" data-enter><span>03</span><i /><p>הלוקיישן שלכם</p></div>
+        <header className="events-heading" data-enter style={enterDelay(50)}>
           <div>
             <h2 id="events-title">אנחנו מביאים<br /><em>את הלהבה.</em></h2>
             <p>אתם רק בוחרים איפה היא נדלקת.</p>
           </div>
         </header>
-        <div className="events-brand-stage" data-reveal aria-hidden="true">
+        <div className="events-brand-stage" data-enter style={enterDelay(90)} aria-hidden="true">
           <span>LIVE FIRE / ON THE ROAD</span>
           <img className="events-brand-mark" src="/brand/brand-camel-oven-icon-v2.webp" alt="" />
           <i />
         </div>
-        <div className="events-grid" data-reveal>
+        <div ref={eventsGridRef} className="events-grid" data-enter style={enterDelay(120)} onScroll={handleLocationsScroll}>
           {eventCategories.map((category, index) => (
             <button
               className="event-card"
@@ -607,11 +830,17 @@ export default function Home() {
               key={category.title}
               aria-haspopup="dialog"
               aria-label={`פתיחת גלריית אירועים ${category.title}`}
-              onClick={() => setActiveGallery(index)}
+              onFocus={() => setActiveLocation(index)}
+              onClick={(event) => openGallery(index, event.currentTarget)}
               data-ember-burst="18"
               data-ember-target=".events-brand-stage"
             >
-              <img src={category.image} alt="" aria-hidden="true" />
+              <img
+                src={category.image}
+                alt=""
+                aria-hidden="true"
+                style={{ viewTransitionName: activeGallery === index ? "none" : `event-gallery-${index}` }}
+              />
               <span>{category.number}</span>
               <div className="event-card-copy">
                 <p>{category.kicker}</p>
@@ -621,49 +850,90 @@ export default function Home() {
             </button>
           ))}
         </div>
+        <div className="events-indicator" role="group" aria-label="מעבר בין לוקיישנים">
+          <output className="events-indicator-count" aria-live="polite"><bdi>{eventCategories[activeLocation].number} / 03</bdi></output>
+          <span aria-hidden="true" />
+          {eventCategories.map((category, index) => (
+            <button
+              key={category.number}
+              type="button"
+              aria-label={`מעבר ללוקיישן ${category.title}`}
+              aria-current={activeLocation === index ? "true" : undefined}
+              onClick={() => goToLocation(index)}
+            >
+              <i aria-hidden="true" />
+            </button>
+          ))}
+        </div>
       </section>
 
       {gallery && (
         <div
+          ref={galleryDialogRef}
           className="gallery-overlay"
           role="dialog"
           aria-modal="true"
           aria-labelledby="gallery-title"
+          tabIndex={-1}
+          data-phase={galleryPhase}
         >
-          <button className="gallery-backdrop" type="button" onClick={() => setActiveGallery(null)} aria-label="סגירת הגלריה" />
-          <button className="gallery-close" type="button" onClick={() => setActiveGallery(null)} aria-label="סגירת הגלריה">×</button>
-          <div className="gallery-viewer">
+          <button className="gallery-backdrop" type="button" tabIndex={-1} onClick={closeGallery} aria-label="סגירת הגלריה" />
+          <button ref={galleryCloseRef} className="gallery-close" type="button" onClick={closeGallery} aria-label="סגירת הגלריה">×</button>
+          <div className="gallery-viewer" data-gallery-index={activeGallery}>
             <figure>
-              <img src={gallery.image} alt={gallery.alt} />
+              <img
+                src={gallery.image}
+                alt={gallery.alt}
+                style={{ viewTransitionName: `event-gallery-${activeGallery}` }}
+              />
               <figcaption><bdi>01 / 01</bdi> — שער הגלריה</figcaption>
             </figure>
             <div className="gallery-copy">
               <p>{gallery.number} / גלריית אירועים</p>
               <h2 id="gallery-title">{gallery.title}</h2>
               <span>השער מוכן. את הרגעים האמיתיים מהאירועים נוסיף לכאן כשיעלו התמונות.</span>
-              <button type="button" onClick={() => setActiveGallery(null)}>חזרה לאתר ↑</button>
+              <button type="button" onClick={closeGallery}>חזרה לאתר ↑</button>
             </div>
           </div>
         </div>
       )}
 
       <section className="answers" id="faq" aria-labelledby="faq-title">
-        <div className="answers-intro" data-reveal>
+        <div className="answers-intro" data-enter>
           <div className="section-index section-index-dark"><span>04</span><i /><p>לפני שמדליקים</p></div>
           <h2 id="faq-title">קצר.<br />לעניין.<br /><em>חם.</em></h2>
           <a href="tel:+972544669111">יש עוד שאלה? <b>דברו איתנו</b></a>
         </div>
-        <div className="answer-list" data-reveal>
+        <div className="answer-list" data-enter style={enterDelay(60)}>
           {faqs.map(([question, answer], index) => (
-            <details key={question}>
-              <summary><span>0{index + 1}</span><b>{question}</b><i>+</i></summary>
-              <p>{answer}</p>
-            </details>
+            <article className="answer-item" data-open={openFaq === index ? "true" : "false"} key={question}>
+              <h3>
+                <button
+                  id={`faq-toggle-${index}`}
+                  className="answer-toggle"
+                  type="button"
+                  aria-expanded={openFaq === index}
+                  aria-controls={`faq-panel-${index}`}
+                  onClick={() => toggleFaq(index)}
+                >
+                  <span>0{index + 1}</span><b>{question}</b><i aria-hidden="true">+</i>
+                </button>
+              </h3>
+              <div
+                id={`faq-panel-${index}`}
+                className="answer-panel"
+                role="region"
+                aria-labelledby={`faq-toggle-${index}`}
+                aria-hidden={openFaq !== index}
+              >
+                <div><p>{answer}</p></div>
+              </div>
+            </article>
           ))}
         </div>
       </section>
 
-      <section className="final-poster" aria-labelledby="final-title" data-ember-zone data-ember-source="final" data-ember-arrival data-ember-x="0.49" data-ember-y="0.48">
+      <section ref={finalRef} className="final-poster" aria-labelledby="final-title" data-arrived="false" data-ember-zone data-ember-source="final" data-ember-x="0.49" data-ember-y="0.48">
         <img className="final-scene-image" src="/campaign/final-poster-wide.webp" alt="אהרון מוביל גמל ואת הטאבון הנודד אל אירוע ערב" />
         <div className="final-flame-line" aria-hidden="true"><i /><i /><i /><i /></div>
           <div className="final-orange">
