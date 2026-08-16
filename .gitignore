@@ -42,3 +42,4 @@ yarn-error.log*
 # Local review and attachment staging
 /.asset-review/
 /.codex-remote-attachments/
+/site-deploy*.tar.gz

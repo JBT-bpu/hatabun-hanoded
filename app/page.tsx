@@ -465,11 +465,6 @@ export default function Home() {
     activateStage(index, true, true);
 
     if (window.matchMedia("(max-width: 760px)").matches) {
-      document.getElementById(`story-panel-${index}`)?.scrollIntoView({
-        behavior: "auto",
-        block: "nearest",
-        inline: "center",
-      });
       return;
     }
 
@@ -594,6 +589,7 @@ export default function Home() {
 
         <div className="poster-copy">
           <div className="poster-copy-inner">
+            <p className="poster-mobile-kicker">טאבון נייד לאירועים <span aria-hidden="true">•</span> נאפה מול האורחים</p>
             <div className="hero-brand-lockup">
               <span className="hero-brand-orbit" aria-hidden="true"><i /></span>
               <BrandEmblem />
@@ -612,7 +608,7 @@ export default function Home() {
               <a className="poster-cta" href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="36" data-ember-target=".poster-photo">
                 <span>הצעה לאירוע</span><i aria-hidden="true">↙</i>
               </a>
-              <a className="poster-text-link" href="#experience">כנסו לחוויה <span aria-hidden="true">↓</span></a>
+              <a className="poster-text-link" href="#experience">ראו איך זה עובד <span aria-hidden="true">↓</span></a>
             </div>
           </div>
         </div>
