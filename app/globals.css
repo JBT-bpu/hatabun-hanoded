@@ -273,8 +273,8 @@ h1, h2, h3, p { margin-top: 0; }
   opacity: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 81% 55%, rgba(255, 241, 200, .44) 0 2%, rgba(255, 180, 62, .3) 7%, rgba(255, 84, 27, .16) 17%, transparent 36%),
-    radial-gradient(circle at 74% 58%, rgba(255, 84, 27, .18), transparent 44%);
+    radial-gradient(circle at 50% 55%, rgba(255, 241, 200, .44) 0 2%, rgba(255, 180, 62, .3) 7%, rgba(255, 84, 27, .16) 17%, transparent 36%),
+    radial-gradient(circle at 50% 58%, rgba(255, 84, 27, .18), transparent 44%);
   mix-blend-mode: screen;
 }
 
@@ -292,7 +292,7 @@ h1, h2, h3, p { margin-top: 0; }
   height: 100%;
   max-width: none;
   object-fit: cover;
-  object-position: right center;
+  object-position: center center;
   filter: saturate(1.05) contrast(1.05) brightness(0.92);
   transform: scale(1.025);
   transition: filter var(--motion-editorial) var(--ease-state), opacity var(--motion-state) var(--ease-state);
@@ -1852,7 +1852,7 @@ h1, h2, h3, p { margin-top: 0; }
 
   .poster-hero {
     --split: 50%;
-    --mobile-photo-h: calc(100vw / 3);
+    --mobile-photo-h: clamp(180px, 52vw, 230px);
     min-height: auto;
     grid-template-columns: 1fr;
     grid-template-rows: var(--mobile-photo-h) auto 48px;
@@ -1894,8 +1894,8 @@ h1, h2, h3, p { margin-top: 0; }
   .heat-haze-canvas { display: none; }
   .poster-photo:has(.heat-haze-canvas.is-ready) > picture { opacity: 1; }
   .poster-photo > picture img {
-    object-position: right center;
-    transform: translate3d(0, var(--hero-parallax-y), 0) scale(1.2);
+    object-position: center center;
+    transform: translate3d(0, var(--hero-parallax-y), 0) scale(1.04);
     transition: opacity var(--motion-state) linear;
     will-change: transform;
   }

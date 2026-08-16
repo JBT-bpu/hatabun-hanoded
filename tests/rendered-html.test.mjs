@@ -23,7 +23,7 @@ test("server-renders the branded Hebrew event site", async () => {
   assert.match(html, /<html lang="he" dir="rtl">/);
   assert.match(html, /הטאבון הנודד/);
   assert.match(html, /האש נדלקת/);
-  assert.match(html, /\/campaign\/hero-desktop\.webp/);
+  assert.match(html, /\/campaign\/hero-taboon-centered\.webp/);
   assert.match(html, /\/campaign\/menu-dairy\.webp/);
   assert.match(html, /\/brand\/brand-camel-oven-icon-v2\.webp/);
   assert.doesNotMatch(html, /Building your site|codex-preview|react-loading-skeleton/i);
@@ -35,15 +35,15 @@ test("keeps the finished metadata and required campaign assets", async () => {
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
   ]);
 
-  assert.match(page, /hero-mobile\.webp/);
+  assert.match(page, /hero-taboon-centered-mobile\.webp/);
   assert.match(page, /menu-meat\.webp/);
   assert.match(layout, /תיאטרון אש נייד לאירועים/);
   assert.match(layout, /\/og\.png/);
   assert.doesNotMatch(page, /SkeletonPreview|_sites-preview/);
 
   await Promise.all([
-    "../public/campaign/hero-desktop.webp",
-    "../public/campaign/hero-mobile.webp",
+    "../public/campaign/hero-taboon-centered.webp",
+    "../public/campaign/hero-taboon-centered-mobile.webp",
     "../public/fire-story-filmstrip.webp",
     "../public/campaign/menu-dairy.webp",
     "../public/campaign/menu-meat.webp",

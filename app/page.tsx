@@ -580,14 +580,14 @@ export default function Home() {
           className="poster-photo"
           aria-label="טאבון נייד בוער באירוע ערב"
           data-ember-source="hero"
-          data-ember-x="0.88"
+          data-ember-x="0.5"
           data-ember-y="0.55"
         >
           <picture>
-            <source media="(max-width: 760px)" srcSet="/campaign/hero-mobile.webp" />
-            <img src="/campaign/hero-desktop.webp" alt="אהרון מגיש פוקאצ׳ה ליד הטאבון הנייד באירוע ערב" />
+            <source media="(max-width: 760px)" srcSet="/campaign/hero-taboon-centered-mobile.webp" />
+            <img src="/campaign/hero-taboon-centered.webp" alt="הטאבון הנייד בוער וממורכז בחלל חשוך" />
           </picture>
-          <HeatHaze src="/campaign/hero-desktop.webp" lit={lit} />
+          <HeatHaze src="/campaign/hero-taboon-centered.webp" lit={lit} />
           <div className="photo-vignette" aria-hidden="true" />
           <p className="photo-stamp"><span>LIVE FIRE</span> / <b>01</b></p>
         </div>

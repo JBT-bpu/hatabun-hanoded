@@ -29,7 +29,7 @@ vec2 coverUv(vec2 uv) {
 
   if (textureAspect > renderAspect) {
     float visible = renderAspect / textureAspect;
-    uv.x = uv.x * visible + (1.0 - visible);
+    uv.x = uv.x * visible + (1.0 - visible) * 0.5;
   } else {
     float visible = textureAspect / renderAspect;
     uv.y = uv.y * visible + (1.0 - visible) * 0.5;
@@ -40,7 +40,7 @@ vec2 coverUv(vec2 uv) {
 
 void main() {
   vec2 uv = vUv;
-  vec2 fire = vec2(0.78, 0.54);
+  vec2 fire = vec2(0.5, 0.54);
   vec2 plumeDelta = (uv - fire) * vec2(1.35, 0.72);
   float plume = smoothstep(0.48, 0.035, length(plumeDelta));
   plume *= smoothstep(0.98, 0.22, uv.y);
@@ -155,7 +155,7 @@ export default function HeatHaze({ src, lit }: { src: string; lit: boolean }) {
     let frameTimer = 0;
     let lastRenderedAt = 0;
     let heat = 0;
-    let pointer = { x: 0.78, y: 0.54 };
+    let pointer = { x: 0.5, y: 0.54 };
     let bounds = parent.getBoundingClientRect();
     let boundsDirty = false;
     let visible = typeof IntersectionObserver !== "function";
