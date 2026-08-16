@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://hatabunhanoded.co.il/sitemap.xml
