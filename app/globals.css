@@ -122,16 +122,32 @@ h1, h2, h3, p { margin-top: 0; }
   background: rgba(241, 231, 210, 0.18);
   box-shadow: 0 0 0 1px rgba(9, 8, 7, 0.45);
   pointer-events: none;
+  opacity: var(--site-heat);
+  transition: opacity var(--motion-editorial) var(--ease-state);
 }
 
 .scroll-progress::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, #fff1c8 0%, #ffb43e 36%, var(--orange) 100%);
+  /* Burning fuse: pale flame at the leading (bottom) edge, ash at the top. */
+  background: linear-gradient(180deg, #7a2b0e 0%, #ff541b 45%, #ffb43e 82%, #fff1c8 100%);
   box-shadow: 0 0 8px rgba(255, 84, 27, 0.72), 0 0 22px rgba(255, 84, 27, 0.24);
   transform: scaleY(var(--scroll));
   transform-origin: top;
+}
+
+.scroll-progress-ember {
+  position: absolute;
+  z-index: 1;
+  inset-inline-start: 50%;
+  inset-block-start: calc(var(--scroll) * 100%);
+  width: 6px;
+  height: 6px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: #fff1c8;
+  box-shadow: 0 0 10px 3px rgba(255, 132, 40, 0.85), 0 0 3px 1px #fff1c8;
 }
 
 .scroll-progress::after {

@@ -678,7 +678,7 @@ export default function Home() {
       <CinematicScroll />
       <EmberField lit={lit} />
       <a className="skip-link" href="#experience">דילוג לתוכן</a>
-      <div className="scroll-progress" aria-hidden="true" />
+      <div className="scroll-progress" aria-hidden="true"><i className="scroll-progress-ember" /></div>
 
       <section
         ref={heroRef}
