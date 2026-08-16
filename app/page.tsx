@@ -1058,6 +1058,8 @@ export default function Home() {
                   type="button"
                   aria-expanded={openFaq === index}
                   aria-controls={`faq-panel-${index}`}
+                  data-ember-burst="10"
+                  data-ember-intensity="0.6"
                   onClick={() => toggleFaq(index)}
                 >
                   <span>0{index + 1}</span><b>{question}</b><i aria-hidden="true">+</i>
