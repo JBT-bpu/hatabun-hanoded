@@ -294,7 +294,7 @@ export default function Home() {
           finale?.setAttribute("data-arrived", "true");
           finale?.classList.add("is-arrived", "is-arriving");
           finalArrivalTimerRef.current = setTimeout(() => finale?.classList.remove("is-arriving"), 760);
-          burst(".final-poster", window.matchMedia("(pointer: coarse)").matches ? 18 : 40, 1.04);
+          burst(".final-poster", window.matchMedia("(pointer: coarse)").matches ? 24 : 40, 1.04);
           finaleObserver?.disconnect();
         }, { threshold: 0.34 })
       : null;
@@ -412,7 +412,7 @@ export default function Home() {
     if (!animate || prefersReducedMotion()) return;
     shell?.classList.add("is-stage-transitioning");
     setStageTransitionKey((current) => current + 1);
-    burst(".story-arch", window.matchMedia("(pointer: coarse)").matches ? 14 : 28, 0.96);
+    burst(".story-arch", window.matchMedia("(pointer: coarse)").matches ? 18 : 28, 0.96);
 
     if (stageTransitionTimerRef.current) clearTimeout(stageTransitionTimerRef.current);
     stageTransitionTimerRef.current = setTimeout(() => {
@@ -439,7 +439,7 @@ export default function Home() {
     ignitionFrameRef.current = requestAnimationFrame(() => {
       ignitionFrameRef.current = 0;
       setIgniting(true);
-      burst(".poster-photo", window.matchMedia("(pointer: coarse)").matches ? 26 : 54, 1.2);
+      burst(".poster-photo", window.matchMedia("(pointer: coarse)").matches ? 34 : 54, 1.2);
       ignitionEndTimerRef.current = setTimeout(() => setIgniting(false), 700);
     });
   }
@@ -957,8 +957,8 @@ export default function Home() {
       </footer>
 
       <div className="mobile-bar">
-        <a href={mainWhatsapp} target="_blank" rel="noreferrer">WhatsApp</a>
-        <a href="tel:+972544669111">חייגו</a>
+        <a href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="22">WhatsApp</a>
+        <a href="tel:+972544669111" data-ember-burst="18">חייגו</a>
       </div>
     </main>
   );

@@ -48,6 +48,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
 
     const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const mobileQuery = window.matchMedia("(max-width: 760px)");
+    const coarsePointerQuery = window.matchMedia("(pointer: coarse)");
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
 
     let width = window.innerWidth;
@@ -63,9 +64,10 @@ export default function EmberField({ lit }: { lit: boolean }) {
     let isLit = false;
     const visibleSources = new Set<HTMLElement>();
     const hoverCooldown = new WeakMap<HTMLElement, number>();
+    const touchCooldown = new WeakMap<HTMLElement, number>();
 
     const particleCap = () => {
-      const viewportCap = mobileQuery.matches ? 26 : 58;
+      const viewportCap = mobileQuery.matches ? 34 : 58;
       return connection?.saveData ? Math.min(viewportCap, 12) : viewportCap;
     };
 
@@ -189,14 +191,15 @@ export default function EmberField({ lit }: { lit: boolean }) {
     function scheduleAmbient() {
       stopAmbient();
       if (!isLit || reducedMotion || pageHidden || connection?.saveData) return;
-      ambientTimer = window.setTimeout(runAmbient, random(820, 1380));
+      const delay = mobileQuery.matches ? random(660, 1080) : random(820, 1380);
+      ambientTimer = window.setTimeout(runAmbient, delay);
     }
 
     function runAmbient() {
       ambientTimer = 0;
       const source = nearestVisibleSource();
       if (source && isLit && !reducedMotion && !pageHidden) {
-        burstFrom(source, mobileQuery.matches ? 1 : 2, 0.54);
+        burstFrom(source, 2, mobileQuery.matches ? 0.58 : 0.54);
       }
       scheduleAmbient();
     }
@@ -276,6 +279,9 @@ export default function EmberField({ lit }: { lit: boolean }) {
       const trigger = target?.closest<HTMLElement>("[data-ember-burst]");
       if (!trigger) return;
 
+      const recentTouchBurst = performance.now() - (touchCooldown.get(trigger) || 0) < 620;
+      if ((mobileQuery.matches || coarsePointerQuery.matches) && recentTouchBurst) return;
+
       const toggle = trigger.dataset.emberToggle === "true";
       const isTurningOff = toggle && trigger.getAttribute("aria-pressed") === "true";
       const isTurningOn = toggle && !isTurningOff;
@@ -285,6 +291,26 @@ export default function EmberField({ lit }: { lit: boolean }) {
       const parsedIntensity = Number.parseFloat(trigger.dataset.emberIntensity || "1.06");
       const source = findElement(trigger.dataset.emberTarget) || trigger;
       burstFrom(source, parsedCount, parsedIntensity);
+    }
+
+    function onPointerDown(event: PointerEvent) {
+      const isTouchLike = event.pointerType === "touch" || event.pointerType === "pen" || coarsePointerQuery.matches;
+      if (!event.isPrimary || !isTouchLike || !isLit || reducedMotion || pageHidden) return;
+
+      const target = event.target instanceof Element ? event.target : null;
+      const trigger = target?.closest<HTMLElement>("[data-ember-burst]");
+      if (!trigger) return;
+
+      const parsedCount = Number.parseInt(trigger.dataset.emberBurst || "16", 10);
+      const parsedIntensity = Number.parseFloat(trigger.dataset.emberIntensity || "1.06");
+      const touchCount = Math.max(8, Math.min(18, Math.round(parsedCount * 0.52)));
+      const specifiedSource = findElement(trigger.dataset.emberTarget);
+      const origin = specifiedSource
+        ? pointFrom(specifiedSource)
+        : { x: event.clientX, y: event.clientY };
+
+      touchCooldown.set(trigger, performance.now());
+      burstAt(origin, touchCount, Math.min(0.94, parsedIntensity * 0.82));
     }
 
     function onPointerOver(event: PointerEvent) {
@@ -342,7 +368,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
       ignitionTimer = window.setTimeout(() => {
         if (!isLit) return;
         const heroSource = document.querySelector<HTMLElement>("[data-ember-source='hero']");
-        burstFrom(heroSource, mobileQuery.matches ? 22 : 42, 1.16);
+        burstFrom(heroSource, mobileQuery.matches ? 30 : 42, 1.16);
       }, 180);
     }
 
@@ -376,6 +402,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
 
     resize();
     document.addEventListener("click", onClick);
+    document.addEventListener("pointerdown", onPointerDown, { passive: true });
     document.addEventListener("pointerover", onPointerOver, { passive: true });
     window.addEventListener("fire:burst", onFireBurst);
     window.addEventListener("resize", resize, { passive: true });
@@ -390,6 +417,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
       ambientObserver?.disconnect();
       visibleSources.clear();
       document.removeEventListener("click", onClick);
+      document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("pointerover", onPointerOver);
       window.removeEventListener("fire:burst", onFireBurst);
       window.removeEventListener("resize", resize);
