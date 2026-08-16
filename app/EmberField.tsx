@@ -313,6 +313,24 @@ export default function EmberField({ lit }: { lit: boolean }) {
       burstAt(origin, touchCount, Math.min(0.94, parsedIntensity * 0.82));
     }
 
+    let trailDistance = 0;
+    let trailLast: Point | null = null;
+
+    function onTrailMove(event: PointerEvent) {
+      if (!isLit || reducedMotion || pageHidden) return;
+      if (event.pointerType !== "mouse" || coarsePointerQuery.matches) return;
+      const point = { x: event.clientX, y: event.clientY };
+      if (trailLast) {
+        trailDistance += Math.hypot(point.x - trailLast.x, point.y - trailLast.y);
+        if (trailDistance >= 120) {
+          trailDistance = 0;
+          addEmber(point, 0.34);
+          startAnimation();
+        }
+      }
+      trailLast = point;
+    }
+
     function onPointerOver(event: PointerEvent) {
       if (!isLit || reducedMotion || pageHidden || mobileQuery.matches) return;
       const target = event.target instanceof Element ? event.target : null;
@@ -404,6 +422,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
     document.addEventListener("click", onClick);
     document.addEventListener("pointerdown", onPointerDown, { passive: true });
     document.addEventListener("pointerover", onPointerOver, { passive: true });
+    document.addEventListener("pointermove", onTrailMove, { passive: true });
     window.addEventListener("fire:burst", onFireBurst);
     window.addEventListener("resize", resize, { passive: true });
     document.addEventListener("visibilitychange", onVisibilityChange);
@@ -419,6 +438,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
       document.removeEventListener("click", onClick);
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("pointerover", onPointerOver);
+      document.removeEventListener("pointermove", onTrailMove);
       window.removeEventListener("fire:burst", onFireBurst);
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", onVisibilityChange);

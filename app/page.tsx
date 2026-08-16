@@ -1,9 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import gsap from "gsap";
 import EmberField from "./EmberField";
 import HeatHaze from "./HeatHaze";
 import LottieFlame from "./LottieFlame";
+import SmoothScroll, { lenisStore, scrollWindowTo } from "./SmoothScroll";
+import CinematicScroll from "./CinematicScroll";
+import ShaderFlame from "./ShaderFlame";
 
 const whatsappBase = "https://wa.me/972544669111?text=";
 
@@ -149,6 +153,7 @@ export default function Home() {
   const [activeGallery, setActiveGallery] = useState<number | null>(null);
   const [galleryPhase, setGalleryPhase] = useState<GalleryPhase>("enter");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [ignitionHint, setIgnitionHint] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
   const stageShellRef = useRef<HTMLDivElement>(null);
   const stageStepperRef = useRef<HTMLDivElement>(null);
@@ -167,6 +172,11 @@ export default function Home() {
   const galleryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stepperFrameRef = useRef(0);
   const locationsFrameRef = useRef(0);
+  const litRef = useRef(false);
+  const chargingRef = useRef(false);
+  const chargeFrameRef = useRef(0);
+  const fizzleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heatTweenRef = useRef<gsap.core.Tween | null>(null);
   const menu = menus[menuMode];
   const gallery = activeGallery === null ? null : eventCategories[activeGallery];
 
@@ -354,6 +364,7 @@ export default function Home() {
     };
 
     document.body.style.overflow = "hidden";
+    lenisStore.instance?.stop();
     window.addEventListener("keydown", handleDialogKeyDown);
     const focusFrame = requestAnimationFrame(() => {
       if (galleryPhaseRef.current === "exit") return;
@@ -365,17 +376,49 @@ export default function Home() {
     return () => {
       cancelAnimationFrame(focusFrame);
       document.body.style.overflow = previousOverflow;
+      lenisStore.instance?.start();
       window.removeEventListener("keydown", handleDialogKeyDown);
       galleryTriggerRef.current?.focus({ preventScroll: true });
     };
   }, [activeGallery, closeGallery]);
 
   useEffect(() => {
-    ignitionTimerRef.current = setTimeout(() => runIgnition(), prefersReducedMotion() ? 0 : 620);
+    // The site loads cold. Engaged visitors ignite it themselves via the
+    // press-and-hold ritual; passive ones get auto-ignition on first real
+    // scroll or after a grace period, so nobody is left in the ashes.
+    if (prefersReducedMotion()) {
+      runIgnition();
+      return () => {
+        if (ignitionEndTimerRef.current) clearTimeout(ignitionEndTimerRef.current);
+        if (galleryTimerRef.current) clearTimeout(galleryTimerRef.current);
+      };
+    }
+
+    document.documentElement.style.setProperty("--site-heat", "0");
+    const autoIgnite = () => {
+      if (!litRef.current && !chargingRef.current) runIgnition();
+    };
+    ignitionTimerRef.current = setTimeout(autoIgnite, 6000);
+    const onFirstScroll = () => {
+      if (litRef.current) {
+        window.removeEventListener("scroll", onFirstScroll);
+        return;
+      }
+      if (window.scrollY > window.innerHeight * 0.3) {
+        window.removeEventListener("scroll", onFirstScroll);
+        autoIgnite();
+      }
+    };
+    window.addEventListener("scroll", onFirstScroll, { passive: true });
+
     return () => {
+      window.removeEventListener("scroll", onFirstScroll);
       if (ignitionTimerRef.current) clearTimeout(ignitionTimerRef.current);
       if (ignitionEndTimerRef.current) clearTimeout(ignitionEndTimerRef.current);
       if (galleryTimerRef.current) clearTimeout(galleryTimerRef.current);
+      if (fizzleTimerRef.current) clearTimeout(fizzleTimerRef.current);
+      if (chargeFrameRef.current) cancelAnimationFrame(chargeFrameRef.current);
+      heatTweenRef.current?.kill();
     };
   }, []);
 
@@ -420,6 +463,20 @@ export default function Home() {
     }, 420);
   }
 
+  function rampHeat() {
+    const root = document.documentElement;
+    heatTweenRef.current?.kill();
+    if (prefersReducedMotion()) {
+      root.style.setProperty("--site-heat", "1");
+      return;
+    }
+    heatTweenRef.current = gsap.to(root, {
+      "--site-heat": 1,
+      duration: 2.4,
+      ease: "power2.inOut",
+    });
+  }
+
   function runIgnition() {
     if (ignitionTimerRef.current) {
       clearTimeout(ignitionTimerRef.current);
@@ -428,8 +485,11 @@ export default function Home() {
     if (ignitionEndTimerRef.current) clearTimeout(ignitionEndTimerRef.current);
     if (ignitionFrameRef.current) cancelAnimationFrame(ignitionFrameRef.current);
 
+    litRef.current = true;
     setLit(true);
+    setIgnitionHint(false);
     setIgnitionRun((current) => current + 1);
+    rampHeat();
     if (prefersReducedMotion()) {
       setIgniting(false);
       return;
@@ -439,9 +499,70 @@ export default function Home() {
     ignitionFrameRef.current = requestAnimationFrame(() => {
       ignitionFrameRef.current = 0;
       setIgniting(true);
-      burst(".poster-photo", window.matchMedia("(pointer: coarse)").matches ? 42 : 68, 1.2);
+      const coarse = window.matchMedia("(pointer: coarse)").matches;
+      burst(".poster-photo", coarse ? 42 : 68, 1.2);
       ignitionEndTimerRef.current = setTimeout(() => setIgniting(false), 700);
     });
+  }
+
+  const CHARGE_MS = 850;
+
+  function cancelCharge(button: HTMLButtonElement, fizzle: boolean) {
+    if (!chargingRef.current) return;
+    chargingRef.current = false;
+    if (chargeFrameRef.current) cancelAnimationFrame(chargeFrameRef.current);
+    chargeFrameRef.current = 0;
+    button.classList.remove("is-charging");
+    button.style.setProperty("--charge", "0");
+    if (fizzle && !litRef.current) {
+      button.classList.add("is-fizzle");
+      setIgnitionHint(true);
+      if (fizzleTimerRef.current) clearTimeout(fizzleTimerRef.current);
+      fizzleTimerRef.current = setTimeout(() => button.classList.remove("is-fizzle"), 460);
+    }
+  }
+
+  function startCharge(event: React.PointerEvent<HTMLButtonElement>) {
+    if (litRef.current || chargingRef.current) return;
+    if (prefersReducedMotion()) {
+      runIgnition();
+      return;
+    }
+
+    const button = event.currentTarget;
+    chargingRef.current = true;
+    button.classList.add("is-charging");
+    const startedAt = performance.now();
+
+    const step = (now: number) => {
+      chargeFrameRef.current = 0;
+      if (!chargingRef.current) return;
+      const charge = Math.min(1, (now - startedAt) / CHARGE_MS);
+      button.style.setProperty("--charge", String(charge));
+      if (charge >= 1) {
+        chargingRef.current = false;
+        button.classList.remove("is-charging");
+        button.style.setProperty("--charge", "0");
+        runIgnition();
+        return;
+      }
+      chargeFrameRef.current = requestAnimationFrame(step);
+    };
+    chargeFrameRef.current = requestAnimationFrame(step);
+  }
+
+  function releaseCharge(event: React.PointerEvent<HTMLButtonElement>) {
+    cancelCharge(event.currentTarget, true);
+  }
+
+  function handleIgnitionClick(event: React.MouseEvent<HTMLButtonElement>) {
+    if (litRef.current) {
+      runIgnition();
+      return;
+    }
+    // Pointer users ignite via press-and-hold; detail 0 means keyboard or
+    // assistive tech activation, which must not be gated behind the hold.
+    if (event.detail === 0) runIgnition();
   }
 
   function chooseMode(mode: keyof typeof menus) {
@@ -478,7 +599,7 @@ export default function Home() {
     const top = window.scrollY + shell.getBoundingClientRect().top;
     const travel = Math.max(0, shell.offsetHeight - window.innerHeight);
     const target = top + (index / Math.max(1, stages.length - 1)) * travel;
-    window.scrollTo({ top: target, behavior: "auto" });
+    scrollWindowTo(target, true);
   }
 
   function handleStageStepperScroll() {
@@ -553,6 +674,8 @@ export default function Home() {
       className={`${lit ? "site-is-lit" : "site-is-dim"}${motionReady ? " motion-ready" : ""}${igniting ? " site-is-igniting" : ""}`}
       data-ignition-run={ignitionRun}
     >
+      <SmoothScroll />
+      <CinematicScroll />
       <EmberField lit={lit} />
       <a className="skip-link" href="#experience">דילוג לתוכן</a>
       <div className="scroll-progress" aria-hidden="true" />
@@ -588,6 +711,10 @@ export default function Home() {
             <img src="/campaign/hero-taboon-centered.webp" alt="הטאבון הנייד בוער וממורכז בחלל חשוך" />
           </picture>
           <HeatHaze src="/campaign/hero-taboon-centered.webp" lit={lit} />
+          <div className="shader-flame-dock" aria-hidden="true">
+            <ShaderFlame lit={lit} />
+          </div>
+          <span key={ignitionRun} className="heat-wave" aria-hidden="true" />
           <div className="photo-vignette" aria-hidden="true" />
           <p className="photo-stamp"><span>LIVE FIRE</span> / <b>01</b></p>
         </div>
@@ -602,8 +729,14 @@ export default function Home() {
             </div>
             <div className="brand-strike" aria-hidden="true" />
             <p className="poster-slogan">
-              <span>האש נדלקת.</span>
-              <strong>האירוע מתחיל.</strong>
+              <span>
+                <span className="slogan-word" style={{ "--wi": 0 } as CSSProperties}>האש</span>{" "}
+                <span className="slogan-word" style={{ "--wi": 1 } as CSSProperties}>נדלקת.</span>
+              </span>
+              <strong>
+                <span className="slogan-word" style={{ "--wi": 2 } as CSSProperties}>האירוע</span>{" "}
+                <span className="slogan-word" style={{ "--wi": 3 } as CSSProperties}>מתחיל.</span>
+              </strong>
             </p>
             <p className="poster-body">
               טאבון שמגיע אליכם, נדלק מול האורחים ומוציא פוקאצ׳ות חמות בדיוק כשהערב מתחיל לזוז.
@@ -620,12 +753,21 @@ export default function Home() {
         <button
           className="ignition"
           type="button"
-          aria-label={lit ? "הפעלת רצף ההדלקה מחדש" : "הדלקת האש באתר"}
-          onClick={runIgnition}
+          aria-label={lit ? "הפעלת רצף ההדלקה מחדש" : "הדלקת האש באתר — לחיצה ארוכה"}
+          onClick={handleIgnitionClick}
+          onPointerDown={startCharge}
+          onPointerUp={releaseCharge}
+          onPointerLeave={releaseCharge}
+          onPointerCancel={releaseCharge}
+          onContextMenu={(event) => { if (!lit) event.preventDefault(); }}
         >
+          <span className="ignition-charge-ring" aria-hidden="true" />
           <LottieFlame active={lit} replayKey={ignitionRun} />
           <b>{lit ? "שוב" : "הדליקו"}</b>
-          <small>{lit ? "הדליקו מחדש" : "לחצו לאש"}</small>
+          <small>{lit ? "הדליקו מחדש" : "החזיקו לאש"}</small>
+          {ignitionHint && !lit ? (
+            <span className="ignition-hint" role="status">החזיקו את הכפתור להדלקה</span>
+          ) : null}
         </button>
 
         <div className="poster-ticker" aria-label="יתרונות">
@@ -734,7 +876,7 @@ export default function Home() {
 
       <section className="menu-lab" id="menu" aria-labelledby="menu-title">
         <div className="menu-photo" data-enter data-ember-zone data-ember-source="menu" data-ember-x="0.72" data-ember-y="0.38">
-          <div className="menu-image-stack">
+          <div className="menu-image-stack" data-drift="5" data-drift-scale="1.12">
             {(Object.keys(menus) as Array<keyof typeof menus>).map((mode) => (
               <img
                 key={mode}
