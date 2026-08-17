@@ -38,25 +38,21 @@ const stages = [
   },
 ];
 
-const menus = {
-  dairy: {
-    label: "חלבי",
-    title: "קרמי, רענן, לוהט.",
-    image: "/campaign/menu-dairy.webp",
-    alt: "פוקאצ׳ה חלבית מוארכת עם גבינות, עגבניות וזיתים ליד טאבון בוער",
-    options: ["מוצרלה", "בולגרית", "צפתית", "פסטו", "אנטיפסטי", "זיתים"],
-  },
-  meat: {
-    label: "בשרי",
-    title: "עמוק, עסיסי, מהאש.",
-    image: "/campaign/menu-meat.webp",
-    alt: "פוקאצ׳ה בשרית מוארכת עם בשר, בצל, עשבי תיבול ופלפל ליד טאבון בוער",
-    options: ["שווארמה", "בשר טחון", "חצילים", "בצל סגול", "חריף", "טפנד"],
-  },
-};
+const focacciaToppings = [
+  { label: "מוצרלה", kind: "cheese", x: 39, y: 72 },
+  { label: "בולגרית", kind: "feta", x: 66, y: 79 },
+  { label: "פסטו", kind: "pesto", x: 52, y: 65 },
+  { label: "אנטיפסטי", kind: "pepper", x: 72, y: 68 },
+  { label: "זיתים", kind: "olive", x: 31, y: 80 },
+  { label: "חצילים", kind: "eggplant", x: 57, y: 84 },
+  { label: "בצל סגול", kind: "onion", x: 79, y: 76 },
+  { label: "חריף", kind: "chilli", x: 45, y: 86 },
+  { label: "טפנד", kind: "tapenade", x: 62, y: 72 },
+  { label: "עשבי תיבול", kind: "herbs", x: 36, y: 65 },
+];
 
 const faqs = [
-  ["חלבי או בשרי?", "שני הכיוונים אפשריים. בשיחה הראשונה בוחרים את האופי והתוספות שמתאימים לאירוע."],
+  ["מה אפשר לשים על הפוקאצ׳ה?", "בוחרים מתוך מגוון של כ־10 תוספות, ובשיחה הראשונה מתאימים את השילובים לאופי האירוע."],
   ["איפה מקימים?", "בבית, בטבע, באולם או בגן אירועים. ספרו לנו על הלוקיישן ונבדוק את ההתאמה."],
   ["עמדה מרכזית או תוספת?", "אפשר לבנות את הטאבון כמרכז קבלת הפנים או לשלב אותו לצד עמדות נוספות."],
   ["איך מקבלים הצעה?", "שולחים תאריך, מיקום וכמה מילים על האירוע בוואטסאפ — ואנחנו ממשיכים משם."],
@@ -123,17 +119,15 @@ function burst(selector: string, count: number, intensity = 1) {
   }));
 }
 
-function BrandEmblem({ variant = "primary" }: { variant?: "primary" | "seal" }) {
-  const source = variant === "primary"
-    ? "/brand/brand-primary-logo-v2.webp"
-    : "/brand/brand-round-seal.png";
-
+function BrandEmblem() {
   return (
-    <span className={`emblem emblem-${variant}`} aria-hidden="true">
+    <span className="emblem emblem-primary" aria-hidden="true">
       <img
         className="emblem-crest"
-        src={source}
+        src="/brand/brand-primary-logo-v2.webp"
         alt=""
+        width="905"
+        height="1314"
         decoding="async"
       />
     </span>
@@ -147,14 +141,17 @@ export default function Home() {
   const [ignitionRun, setIgnitionRun] = useState(0);
   const [activeStage, setActiveStage] = useState(0);
   const [stageTransitionKey, setStageTransitionKey] = useState(0);
-  const [menuMode, setMenuMode] = useState<keyof typeof menus>("dairy");
   const [selected, setSelected] = useState<string[]>(["מוצרלה", "פסטו", "אנטיפסטי"]);
+  const [menuBaking, setMenuBaking] = useState(false);
+  const [menuBaked, setMenuBaked] = useState(false);
+  const [menuBakeRun, setMenuBakeRun] = useState(0);
   const [activeLocation, setActiveLocation] = useState(0);
   const [activeGallery, setActiveGallery] = useState<number | null>(null);
   const [galleryPhase, setGalleryPhase] = useState<GalleryPhase>("enter");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [ignitionHint, setIgnitionHint] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
+  const menuPhotoRef = useRef<HTMLDivElement>(null);
   const stageShellRef = useRef<HTMLDivElement>(null);
   const stageStepperRef = useRef<HTMLDivElement>(null);
   const eventsGridRef = useRef<HTMLDivElement>(null);
@@ -170,6 +167,7 @@ export default function Home() {
   const stageTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finalArrivalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const galleryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const menuBakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stepperFrameRef = useRef(0);
   const locationsFrameRef = useRef(0);
   const litRef = useRef(false);
@@ -178,7 +176,6 @@ export default function Home() {
   const chargeFrameRef = useRef(0);
   const fizzleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const heatTweenRef = useRef<gsap.core.Tween | null>(null);
-  const menu = menus[menuMode];
   const gallery = activeGallery === null ? null : eventCategories[activeGallery];
 
   const closeGallery = useCallback(() => {
@@ -305,7 +302,7 @@ export default function Home() {
           finale?.setAttribute("data-arrived", "true");
           finale?.classList.add("is-arrived", "is-arriving");
           finalArrivalTimerRef.current = setTimeout(() => finale?.classList.remove("is-arriving"), 760);
-          burst(".final-poster", window.matchMedia("(pointer: coarse)").matches ? 30 : 48, 1.04);
+          burst(".final-poster", window.matchMedia("(pointer: coarse)").matches ? 6 : 10, 0.58);
           finaleObserver?.disconnect();
         }, { threshold: 0.34 })
       : null;
@@ -417,6 +414,7 @@ export default function Home() {
       if (ignitionTimerRef.current) clearTimeout(ignitionTimerRef.current);
       if (ignitionEndTimerRef.current) clearTimeout(ignitionEndTimerRef.current);
       if (galleryTimerRef.current) clearTimeout(galleryTimerRef.current);
+      if (menuBakeTimerRef.current) clearTimeout(menuBakeTimerRef.current);
       if (fizzleTimerRef.current) clearTimeout(fizzleTimerRef.current);
       if (chargeFrameRef.current) cancelAnimationFrame(chargeFrameRef.current);
       heatTweenRef.current?.kill();
@@ -425,8 +423,8 @@ export default function Home() {
 
   const menuHref = useMemo(() => {
     const choice = selected.length ? selected.join(", ") : "לבחירה משותפת";
-    return `${whatsappBase}${encodeURIComponent(`היי הטאבון הנודד, אשמח להצעה לאירוע. הכיוון שמעניין אותי: ${menu.label}. תוספות: ${choice}`)}`;
-  }, [menu.label, selected]);
+    return `${whatsappBase}${encodeURIComponent(`היי הטאבון הנודד, אשמח להצעה לאירוע. לפוקאצ׳ה בחרתי: ${choice}. אשמח לשמוע גם על הסלטים והקינוחים.`)}`;
+  }, [selected]);
 
   const mainWhatsapp = `${whatsappBase}${encodeURIComponent("היי הטאבון הנודד, אשמח לקבל הצעה לאירוע")}`;
 
@@ -456,7 +454,7 @@ export default function Home() {
     if (!animate || prefersReducedMotion()) return;
     shell?.classList.add("is-stage-transitioning");
     setStageTransitionKey((current) => current + 1);
-    burst(".story-arch", window.matchMedia("(pointer: coarse)").matches ? 24 : 36, 0.96);
+    burst(".story-arch", window.matchMedia("(pointer: coarse)").matches ? 5 : 8, 0.58);
 
     if (stageTransitionTimerRef.current) clearTimeout(stageTransitionTimerRef.current);
     stageTransitionTimerRef.current = setTimeout(() => {
@@ -489,7 +487,6 @@ export default function Home() {
       [
         "/fire-story-filmstrip.webp",
         "/campaign/menu-dairy.webp",
-        "/campaign/menu-meat.webp",
       ].forEach((href) => {
         const link = document.createElement("link");
         link.rel = "prefetch";
@@ -524,8 +521,8 @@ export default function Home() {
       ignitionFrameRef.current = 0;
       setIgniting(true);
       const coarse = window.matchMedia("(pointer: coarse)").matches;
-      burst(".poster-photo", coarse ? 42 : 68, 1.2);
-      ignitionEndTimerRef.current = setTimeout(() => setIgniting(false), 700);
+      burst(".poster-photo", coarse ? 28 : 44, 1.24);
+      ignitionEndTimerRef.current = setTimeout(() => setIgniting(false), 1220);
     });
   }
 
@@ -589,21 +586,59 @@ export default function Home() {
     if (event.detail === 0) runIgnition();
   }
 
-  function chooseMode(mode: keyof typeof menus) {
-    if (mode !== menuMode && !prefersReducedMotion()) {
-      burst(".menu-photo", window.matchMedia("(pointer: coarse)").matches ? 20 : 30, 0.9);
-    }
-    setMenuMode(mode);
-    setSelected(menus[mode].options.slice(0, 3));
-  }
-
   function toggleIngredient(item: string) {
+    if (menuBakeTimerRef.current) clearTimeout(menuBakeTimerRef.current);
+    setMenuBaking(false);
+    setMenuBaked(false);
     if (!prefersReducedMotion()) {
-      burst(".menu-photo", window.matchMedia("(pointer: coarse)").matches ? 14 : 22, 0.78);
+      burst(".menu-photo", window.matchMedia("(pointer: coarse)").matches ? 2 : 4, 0.46);
     }
     setSelected((current) =>
       current.includes(item) ? current.filter((value) => value !== item) : [...current, item],
     );
+  }
+
+  function clearIngredients() {
+    if (!selected.length) return;
+    if (menuBakeTimerRef.current) clearTimeout(menuBakeTimerRef.current);
+    setMenuBaking(false);
+    setMenuBaked(false);
+    setSelected([]);
+  }
+
+  function runMenuBake() {
+    if (!selected.length || menuBaking) return;
+    if (menuBakeTimerRef.current) clearTimeout(menuBakeTimerRef.current);
+    setMenuBakeRun((current) => current + 1);
+    setMenuBaked(false);
+
+    if (prefersReducedMotion()) {
+      setMenuBaked(true);
+      return;
+    }
+
+    setMenuBaking(true);
+    burst(".menu-photo", window.matchMedia("(pointer: coarse)").matches ? 28 : 46, 1.3);
+    menuBakeTimerRef.current = setTimeout(() => {
+      setMenuBaking(false);
+      setMenuBaked(true);
+    }, 1680);
+  }
+
+  function trackMenuForge(event: React.PointerEvent<HTMLDivElement>) {
+    if (window.matchMedia("(pointer: coarse)").matches || prefersReducedMotion()) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+    event.currentTarget.style.setProperty("--forge-x", `${x * 100}%`);
+    event.currentTarget.style.setProperty("--forge-y", `${y * 100}%`);
+    event.currentTarget.style.setProperty("--forge-tilt-x", `${(x - 0.5) * 5}deg`);
+    event.currentTarget.style.setProperty("--forge-tilt-y", `${(0.5 - y) * 4}deg`);
+  }
+
+  function resetMenuForge() {
+    menuPhotoRef.current?.style.setProperty("--forge-tilt-x", "0deg");
+    menuPhotoRef.current?.style.setProperty("--forge-tilt-y", "0deg");
   }
 
   function goToStage(index: number) {
@@ -713,7 +748,7 @@ export default function Home() {
       >
         <header className="poster-nav">
           <a className="nav-brand" href="#top" aria-label="הטאבון הנודד — חזרה לראש העמוד">
-            <img src="/brand/brand-horizontal-logo-v2.webp" alt="" />
+            <img src="/brand/brand-horizontal-logo-v2.webp" alt="" width="1400" height="514" decoding="async" />
           </a>
           <nav aria-label="ניווט ראשי">
             <a href="#experience">החוויה</a>
@@ -732,7 +767,14 @@ export default function Home() {
         >
           <picture>
             <source media="(max-width: 760px)" srcSet="/campaign/hero-taboon-centered-mobile.webp" />
-            <img src="/campaign/hero-taboon-centered.webp" alt="הטאבון הנייד בוער וממורכז בחלל חשוך" />
+            <img
+              src="/campaign/hero-taboon-centered.webp"
+              alt="הטאבון הנייד בוער וממורכז בחלל חשוך"
+              width="960"
+              height="540"
+              decoding="async"
+              fetchPriority="high"
+            />
           </picture>
           <HeatHaze src="/campaign/hero-taboon-centered.webp" lit={lit} />
           <div className="shader-flame-dock" aria-hidden="true">
@@ -741,6 +783,23 @@ export default function Home() {
           <span key={ignitionRun} className="heat-wave" aria-hidden="true" />
           <div className="photo-vignette" aria-hidden="true" />
           <p className="photo-stamp"><span>LIVE FIRE</span> / <b>01</b></p>
+        </div>
+
+        <div key={`ignition-climax-${ignitionRun}`} className="ignition-climax" aria-hidden="true">
+          {Array.from({ length: 18 }, (_, index) => (
+            <i
+              key={index}
+              style={{
+                "--x": `${((index * 37) % 92) - 46}vw`,
+                "--y": `${-(24 + ((index * 17) % 34))}vh`,
+                "--r": `${-48 + ((index * 29) % 96)}deg`,
+                "--delay": `${(index % 6) * 22}ms`,
+                "--w": `${2 + (index % 3)}px`,
+                "--h": `${15 + ((index * 11) % 28)}px`,
+              } as CSSProperties}
+            />
+          ))}
+          <b />
         </div>
 
         <div className="poster-copy">
@@ -766,8 +825,8 @@ export default function Home() {
               טאבון שמגיע אליכם, נדלק מול האורחים ומוציא פוקאצ׳ות חמות בדיוק כשהערב מתחיל לזוז.
             </p>
             <div className="poster-actions">
-              <a className="poster-cta" href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="36" data-ember-target=".poster-photo">
-                <span>הצעה לאירוע</span><i aria-hidden="true">↙</i>
+              <a className="poster-cta" href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="12" data-ember-target=".poster-photo">
+                <span>קבלו הצעה לאירוע</span><i aria-hidden="true">↙</i>
               </a>
               <a className="poster-text-link" href="#experience">כנסו לחוויה <span aria-hidden="true">↓</span></a>
             </div>
@@ -796,9 +855,9 @@ export default function Home() {
 
         <div className="poster-ticker" aria-label="יתרונות">
           <div>
-            <span>נאפה במקום</span><i>◆</i><span>חלבי או בשרי</span><i>◆</i>
+            <span>נאפה במקום</span><i>◆</i><span>מבחר תוספות</span><i>◆</i>
             <span>מול האורחים</span><i>◆</i><span>לבית, לטבע ולאולם</span><i>◆</i>
-            <span>נאפה במקום</span><i>◆</i><span>חלבי או בשרי</span><i>◆</i>
+            <span>נאפה במקום</span><i>◆</i><span>מבחר תוספות</span><i>◆</i>
           </div>
         </div>
       </section>
@@ -898,21 +957,76 @@ export default function Home() {
         </div>
       </section>
 
+      <div className="forge-seam" aria-hidden="true">
+        <i /><span>LIVE FIRE — FORGED ON SITE</span><i />
+      </div>
+
       <section className="menu-lab" id="menu" aria-labelledby="menu-title">
-        <div className="menu-photo" data-enter data-ember-zone data-ember-source="menu" data-ember-x="0.72" data-ember-y="0.38">
-          <div className="menu-image-stack" data-drift="5" data-drift-scale="1.12">
-            {(Object.keys(menus) as Array<keyof typeof menus>).map((mode) => (
-              <img
-                key={mode}
-                src={menus[mode].image}
-                alt={menuMode === mode ? menus[mode].alt : ""}
-                aria-hidden={menuMode !== mode}
-                data-active={menuMode === mode ? "true" : "false"}
+        <div
+          ref={menuPhotoRef}
+          className={`menu-photo${menuBaking ? " is-baking" : ""}`}
+          data-baked={menuBaked ? "true" : "false"}
+          data-selected={selected.length ? "true" : "false"}
+          onPointerMove={trackMenuForge}
+          onPointerLeave={resetMenuForge}
+          data-enter
+          data-ember-zone
+          data-ember-source="menu"
+          data-ember-x="0.72"
+          data-ember-y="0.38"
+        >
+          <div className="menu-image-stack">
+            <img
+              src="/campaign/menu-dairy.webp"
+              alt="פוקאצ׳ה מוארכת עם תוספות ליד טאבון בוער"
+              data-active="true"
+              width="1123"
+              height="1401"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <div className="menu-photo-shade" aria-hidden="true" />
+          <div className="menu-forge-flame" aria-hidden="true">
+            <ShaderFlame lit={menuBaking} />
+          </div>
+          <div className="ingredient-traces" aria-hidden="true">
+            {selected.slice(0, 6).map((label) => {
+              const topping = focacciaToppings.find((item) => item.label === label);
+              if (!topping) return null;
+              return (
+                <span
+                  key={label}
+                  data-kind={topping.kind}
+                  style={{ "--topping-x": `${topping.x}%`, "--topping-y": `${topping.y}%` } as CSSProperties}
+                >
+                  <i /><b>{label}</b>
+                </span>
+              );
+            })}
+          </div>
+          <div className="menu-forge-meter" aria-hidden="true">
+            <span><b>{menuBaking ? "480" : menuBaked ? "360" : selected.length ? "180" : "080"}°</b><small>STONE HEAT</small></span>
+            <i><em /></i>
+          </div>
+          <div key={menuBakeRun} className="menu-bake-climax" aria-hidden="true">
+            {Array.from({ length: 18 }, (_, index) => (
+              <i
+                key={index}
+                style={{
+                  "--x": `${((index * 41) % 110) - 55}vw`,
+                  "--y": `${-(34 + ((index * 13) % 44))}vh`,
+                  "--r": `${-60 + ((index * 31) % 120)}deg`,
+                  "--delay": `${(index % 4) * 24}ms`,
+                } as CSSProperties}
               />
             ))}
           </div>
-          <div className="menu-photo-shade" aria-hidden="true" />
-          <p className="menu-mode-stamp"><span>LIVE FIRE</span> / {menu.label}</p>
+          <div className="menu-bake-status" role="status" aria-live="polite">
+            <span>{menuBaking ? "נכנסת לאש" : menuBaked ? "מוכנה מהאש" : ""}</span>
+            <small>{menuBaking ? "החום עולה" : menuBaked ? "הבחירה שלכם נצרבה" : ""}</small>
+          </div>
+          <p className="menu-mode-stamp"><span>LIVE FIRE</span> / FOCACCIA</p>
           <div className="menu-motif-dock" aria-label="מה נכנס לחוויה">
             {[
               ["/brand/icon-wheat-v2.png", "בצק טרי"],
@@ -920,77 +1034,97 @@ export default function Home() {
               ["/brand/icon-flame-v2.png", "אש חיה"],
               ["/brand/icon-oven-v2.png", "מגישים"],
             ].map(([source, label], index) => (
-              <span className="menu-motif" key={source} data-active={index === Math.min(3, Math.max(0, selected.length - 1)) ? "true" : "false"}>
-                <img src={source} alt="" aria-hidden="true" />
+              <span
+                className="menu-motif"
+                key={source}
+                data-active={index === (menuBaking ? 2 : menuBaked ? 3 : selected.length ? 1 : 0) ? "true" : "false"}
+              >
+                <img src={source} alt="" aria-hidden="true" width="320" height="320" loading="lazy" decoding="async" />
                 <b>{label}</b>
               </span>
             ))}
           </div>
           <div className="chosen-orbit" aria-live="polite">
-            {selected.slice(0, 4).map((item, index) => (
+            {selected.length === 0 ? <span className="chosen-empty">בחרו תוספות</span> : null}
+            {selected.slice(0, 3).map((item, index) => (
               <span key={item} style={{ "--pos": index } as CSSProperties}>{item}</span>
             ))}
+            {selected.length > 3 ? <span className="chosen-more">+{selected.length - 3}</span> : null}
           </div>
-          <span className="menu-counter"><bdi>{String(selected.length).padStart(2, "0")}</bdi> / תוספות</span>
+          <span className="menu-counter"><bdi>{String(selected.length).padStart(2, "0")}</bdi> נבחרו</span>
         </div>
 
         <div className="menu-console" data-enter style={enterDelay(60)}>
-          <div className="section-index section-index-dark"><span>02</span><i /><p>תפריט חי</p></div>
-          <p className="console-kicker">מה יוצא מהטאבון?</p>
-          <h2 id="menu-title">בונים<br /><em>את הביס.</em></h2>
-          <div className="mode-switch" role="tablist" aria-label="סוג התפריט">
-            {(Object.keys(menus) as Array<keyof typeof menus>).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                role="tab"
-                aria-selected={menuMode === mode}
-                onClick={() => chooseMode(mode)}
-              >
-                {menus[mode].label}
-              </button>
-            ))}
+          <div className="section-index section-index-dark"><span>02</span><i /><p>מה בתפריט</p></div>
+          <p className="console-kicker">FOCACCIA BUILDER / ישר מהאש</p>
+          <h2 id="menu-title">בונים את<br /><em>הפוקאצ׳ה.</em></h2>
+          <div className="menu-range" aria-label="קטגוריות בתפריט">
+            <span data-current="true">פוקאצ׳ות</span>
+            <span>סלטים</span>
+            <span>קינוחים</span>
+            <span>ועוד בהמשך</span>
           </div>
-          <p className="menu-direction" key={menuMode}>{menu.title}</p>
+          <div className="builder-step">
+            <span>01</span><b>בחרו תוספות</b><small>כ־10 אפשרויות לבניית הפוקאצ׳ה</small>
+          </div>
+          <div className="builder-step builder-step-toppings builder-tools">
+            <p>אפשר לבחור כמה שרוצים</p>
+            <button type="button" onClick={clearIngredients} disabled={!selected.length}>נקו בחירה</button>
+          </div>
           <div className="ingredient-grid" aria-label="בחירת תוספות">
-            {menu.options.map((item) => (
+            {focacciaToppings.map((item) => (
               <button
                 type="button"
-                key={item}
-                className={selected.includes(item) ? "is-selected" : ""}
-                aria-pressed={selected.includes(item)}
-                onClick={() => toggleIngredient(item)}
+                key={item.label}
+                className={selected.includes(item.label) ? "is-selected" : ""}
+                aria-pressed={selected.includes(item.label)}
+                onClick={() => toggleIngredient(item.label)}
               >
-                <span>{selected.includes(item) ? "−" : "+"}</span>{item}
+                <span>{selected.includes(item.label) ? "✓" : "+"}</span>{item.label}
               </button>
             ))}
           </div>
-          <a
-            className="menu-submit"
-            href={menuHref}
-            target="_blank"
-            rel="noreferrer"
-            data-ember-burst="26"
-          >
-            שלחו את הכיוון לוואטסאפ <span aria-hidden="true">↙</span>
-          </a>
-          <small>הבחירה כאן היא השראה — את התפריט הסופי סוגרים יחד.</small>
+          <div className="builder-recap" aria-live="polite">
+            <span>הפוקאצ׳ה שלכם</span>
+            <p>{selected.length ? selected.join(" / ") : "בלי תוספות כרגע — אפשר להחליט יחד"}</p>
+          </div>
+          <div className="builder-actions">
+            <button className="menu-bake-button" type="button" onClick={runMenuBake} disabled={!selected.length || menuBaking}>
+              <img src="/brand/icon-flame-v2.png" alt="" aria-hidden="true" width="320" height="320" loading="lazy" decoding="async" />
+              <span>{menuBaking ? "נכנסת לאש…" : menuBaked ? "הדליקו שוב" : "הכניסו לאש"}</span>
+            </button>
+            <a
+              className="menu-submit"
+              href={menuHref}
+              target="_blank"
+              rel="noreferrer"
+              data-ember-burst="14"
+              data-ember-target=".menu-photo"
+            >
+              שלחו לוואטסאפ <span aria-hidden="true">↙</span>
+            </a>
+          </div>
+          <small>זו התחלה לשיחה — את התפריט המדויק סוגרים יחד.</small>
         </div>
       </section>
 
-      <section className="events section-dark" id="events" aria-labelledby="events-title" data-ember-zone>
+      <div className="forge-seam" aria-hidden="true">
+        <i /><span>COAL / FLAME / STEEL</span><i />
+      </div>
+
+      <section className="events section-dark" id="events" aria-labelledby="events-title" data-ember-zone data-ember-source="events" data-ember-x="0.5" data-ember-y="0.72">
         <div className="section-index" data-enter><span>03</span><i /><p>הלוקיישן שלכם</p></div>
         <header className="events-heading" data-enter style={enterDelay(50)}>
           <div>
+            <div className="events-forge-mark" aria-hidden="true">
+              <img src="/brand/brand-camel-oven-icon-v2.webp" alt="" width="1100" height="1100" loading="lazy" decoding="async" />
+              <span><b>LIVE FIRE</b><small>ON THE ROAD / 03</small></span>
+              <i />
+            </div>
             <h2 id="events-title">אנחנו מביאים<br /><em>את הלהבה.</em></h2>
             <p>אתם רק בוחרים איפה היא נדלקת.</p>
           </div>
         </header>
-        <div className="events-brand-stage" data-enter style={enterDelay(90)} aria-hidden="true">
-          <span>LIVE FIRE / ON THE ROAD</span>
-          <img className="events-brand-mark" src="/brand/brand-camel-oven-icon-v2.webp" alt="" />
-          <i />
-        </div>
         <div ref={eventsGridRef} className="events-grid" data-enter style={enterDelay(120)} onScroll={handleLocationsScroll}>
           {eventCategories.map((category, index) => (
             <button
@@ -1001,12 +1135,16 @@ export default function Home() {
               aria-label={`פתיחת גלריית אירועים ${category.title}`}
               onFocus={() => setActiveLocation(index)}
               onClick={(event) => openGallery(index, event.currentTarget)}
-              data-ember-burst="24"
+              data-ember-burst="8"
             >
               <img
                 src={category.image}
                 alt=""
                 aria-hidden="true"
+                width="1003"
+                height="1568"
+                loading="lazy"
+                decoding="async"
                 style={{ viewTransitionName: activeGallery === index ? "none" : `event-gallery-${index}` }}
               />
               <span>{category.number}</span>
@@ -1035,6 +1173,10 @@ export default function Home() {
         </div>
       </section>
 
+      <div className="forge-seam" aria-hidden="true">
+        <i /><span>THE FIRE TRAVELS</span><i />
+      </div>
+
       {gallery && (
         <div
           ref={galleryDialogRef}
@@ -1052,6 +1194,9 @@ export default function Home() {
               <img
                 src={gallery.image}
                 alt={gallery.alt}
+                width="1003"
+                height="1568"
+                decoding="async"
                 style={{ viewTransitionName: `event-gallery-${activeGallery}` }}
               />
               <figcaption><bdi>01 / 01</bdi> — שער הגלריה</figcaption>
@@ -1066,10 +1211,10 @@ export default function Home() {
         </div>
       )}
 
-      <section className="answers" id="faq" aria-labelledby="faq-title">
+      <section className="answers" id="faq" aria-labelledby="faq-title" data-ember-zone data-ember-source="answers" data-ember-x="0.18" data-ember-y="0.62">
         <div className="answers-intro" data-enter>
           <div className="section-index section-index-dark"><span>04</span><i /><p>לפני שמדליקים</p></div>
-          <h2 id="faq-title">קצר.<br />לעניין.<br /><em>חם.</em></h2>
+          <h2 id="faq-title">קצר. לעניין. <em>חם.</em></h2>
           <a href="tel:+972544669111">יש עוד שאלה? <b>דברו איתנו</b></a>
         </div>
         <div className="answer-list" data-enter style={enterDelay(60)}>
@@ -1082,7 +1227,7 @@ export default function Home() {
                   type="button"
                   aria-expanded={openFaq === index}
                   aria-controls={`faq-panel-${index}`}
-                  data-ember-burst="10"
+                  data-ember-burst="4"
                   data-ember-intensity="0.6"
                   onClick={() => toggleFaq(index)}
                 >
@@ -1104,13 +1249,21 @@ export default function Home() {
       </section>
 
       <section ref={finalRef} className="final-poster" aria-labelledby="final-title" data-arrived="false" data-ember-zone data-ember-source="final" data-ember-x="0.49" data-ember-y="0.48">
-        <img className="final-scene-image" src="/campaign/final-poster-wide.webp" alt="אהרון מוביל גמל ואת הטאבון הנודד אל אירוע ערב" />
+        <img
+          className="final-scene-image"
+          src="/campaign/final-poster-wide.webp"
+          alt="אהרון מוביל גמל ואת הטאבון הנודד אל אירוע ערב"
+          width="1732"
+          height="908"
+          loading="lazy"
+          decoding="async"
+        />
         <div className="final-flame-line" aria-hidden="true"><i /><i /><i /><i /></div>
           <div className="final-orange">
           <span className="final-kicker">הטאבון הנודד / LIVE FIRE</span>
           <h2 id="final-title">יש אירוע באופק?<br />בואו ניתן לו <em>אש.</em></h2>
           <span className="final-orange-copy">אנחנו מגיעים, מדליקים ואופים מול האורחים. אתם נשארים עם ערב שאי אפשר לפספס.</span>
-          <a href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="42" data-ember-target=".final-poster">
+          <a href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="12" data-ember-target=".final-poster">
             <span>מדליקים את התאריך</span><i>↙</i>
           </a>
           <div className="final-contacts">
@@ -1121,15 +1274,15 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="poster-footer" data-ember-zone>
+      <footer className="poster-footer" data-ember-zone data-ember-source="footer" data-ember-x="0.5" data-ember-y="0.5">
         <span>תל אביב / ישראל</span>
         <span>© {new Date().getFullYear()} הטאבון הנודד</span>
         <a href="#top">חזרה לאש ↑</a>
       </footer>
 
       <div className="mobile-bar">
-        <a href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="22">WhatsApp</a>
-        <a href="tel:+972544669111" data-ember-burst="18">חייגו</a>
+        <a href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="7">WhatsApp</a>
+        <a href="tel:+972544669111" data-ember-burst="6">חייגו</a>
       </div>
     </main>
   );

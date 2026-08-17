@@ -26,6 +26,8 @@ test("server-renders the branded Hebrew event site", async () => {
   assert.match(html, /\/campaign\/hero-taboon-centered\.webp/);
   assert.match(html, /\/campaign\/menu-dairy\.webp/);
   assert.match(html, /\/brand\/brand-camel-oven-icon-v2\.webp/);
+  assert.match(html, /FOCACCIA BUILDER/);
+  assert.match(html, /שלחו לוואטסאפ/);
   assert.doesNotMatch(html, /Building your site|codex-preview|react-loading-skeleton/i);
 });
 
@@ -36,9 +38,9 @@ test("keeps the finished metadata and required campaign assets", async () => {
   ]);
 
   assert.match(page, /hero-taboon-centered-mobile\.webp/);
-  assert.match(page, /menu-meat\.webp/);
+  assert.match(page, /focacciaToppings/);
   assert.match(layout, /תיאטרון אש נייד לאירועים/);
-  assert.match(layout, /\/og\.png/);
+  assert.match(layout, /\/og\.jpg/);
   assert.doesNotMatch(page, /SkeletonPreview|_sites-preview/);
 
   await Promise.all([
@@ -46,7 +48,6 @@ test("keeps the finished metadata and required campaign assets", async () => {
     "../public/campaign/hero-taboon-centered-mobile.webp",
     "../public/fire-story-filmstrip.webp",
     "../public/campaign/menu-dairy.webp",
-    "../public/campaign/menu-meat.webp",
-    "../public/og.png",
+    "../public/og.jpg",
   ].map((file) => access(new URL(file, import.meta.url))));
 });

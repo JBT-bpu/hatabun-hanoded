@@ -67,7 +67,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
     const touchCooldown = new WeakMap<HTMLElement, number>();
 
     const particleCap = () => {
-      const viewportCap = mobileQuery.matches ? 42 : 72;
+      const viewportCap = mobileQuery.matches ? 32 : 52;
       return connection?.saveData ? Math.min(viewportCap, 12) : viewportCap;
     };
 
@@ -122,7 +122,10 @@ export default function EmberField({ lit }: { lit: boolean }) {
       if (particles.length >= cap) particles.shift();
 
       const kindRoll = Math.random();
-      const kind: Ember["kind"] = kindRoll < 0.52 ? 0 : kindRoll < 0.8 ? 1 : kindRoll < 0.9 ? 2 : 3;
+      const highHeat = force >= 1.1;
+      const kind: Ember["kind"] = highHeat
+        ? kindRoll < 0.34 ? 0 : kindRoll < 0.56 ? 1 : kindRoll < 0.72 ? 2 : 3
+        : kindRoll < 0.52 ? 0 : kindRoll < 0.8 ? 1 : kindRoll < 0.9 ? 2 : 3;
       const depth = random(0.48, 1);
       const direction = random(-Math.PI * 0.92, -Math.PI * 0.08);
       const speed = random(kind === 3 ? 74 : 52, kind === 3 ? 190 : 164) * force * depth;
@@ -191,7 +194,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
     function scheduleAmbient() {
       stopAmbient();
       if (!isLit || reducedMotion || pageHidden || connection?.saveData) return;
-      const delay = mobileQuery.matches ? random(600, 960) : random(560, 900);
+      const delay = mobileQuery.matches ? random(1050, 1680) : random(880, 1420);
       ambientTimer = window.setTimeout(runAmbient, delay);
     }
 
@@ -199,7 +202,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
       ambientTimer = 0;
       const source = nearestVisibleSource();
       if (source && isLit && !reducedMotion && !pageHidden) {
-        burstFrom(source, mobileQuery.matches ? 3 : 4, mobileQuery.matches ? 0.6 : 0.56);
+        burstFrom(source, mobileQuery.matches ? 2 : 3, mobileQuery.matches ? 0.48 : 0.52);
       }
       scheduleAmbient();
     }
