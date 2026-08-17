@@ -38,18 +38,33 @@ const stages = [
   },
 ];
 
-const focacciaToppings = [
-  { label: "מוצרלה", kind: "cheese", x: 39, y: 72 },
-  { label: "בולגרית", kind: "feta", x: 66, y: 79 },
-  { label: "פסטו", kind: "pesto", x: 52, y: 65 },
-  { label: "אנטיפסטי", kind: "pepper", x: 72, y: 68 },
-  { label: "זיתים", kind: "olive", x: 31, y: 80 },
-  { label: "חצילים", kind: "eggplant", x: 57, y: 84 },
-  { label: "בצל סגול", kind: "onion", x: 79, y: 76 },
-  { label: "חריף", kind: "chilli", x: 45, y: 86 },
-  { label: "טפנד", kind: "tapenade", x: 62, y: 72 },
-  { label: "עשבי תיבול", kind: "herbs", x: 36, y: 65 },
+type FocacciaTopping = {
+  label: string;
+  kind: string;
+  x: number;
+  y: number;
+  sprite?: 0 | 1 | 2;
+};
+
+const focacciaToppings: FocacciaTopping[] = [
+  { label: "מוצרלה", kind: "cheese", x: 46, y: 45, sprite: 0 },
+  { label: "בולגרית", kind: "feta", x: 61, y: 36 },
+  { label: "פסטו", kind: "pesto", x: 40, y: 57 },
+  { label: "אנטיפסטי", kind: "pepper", x: 66, y: 48, sprite: 1 },
+  { label: "זיתים", kind: "olive", x: 35, y: 63, sprite: 2 },
+  { label: "חצילים", kind: "eggplant", x: 55, y: 59 },
+  { label: "בצל סגול", kind: "onion", x: 72, y: 35 },
+  { label: "חריף", kind: "chilli", x: 45, y: 69 },
+  { label: "טפנד", kind: "tapenade", x: 56, y: 28 },
+  { label: "עשבי תיבול", kind: "herbs", x: 54, y: 48 },
 ];
+
+function toppingSpritePosition(sprite?: FocacciaTopping["sprite"]) {
+  if (sprite === 0) return "0%";
+  if (sprite === 1) return "50%";
+  if (sprite === 2) return "100%";
+  return "0%";
+}
 
 const faqs = [
   ["מה אפשר לשים על הפוקאצ׳ה?", "בוחרים מתוך מגוון של כ־10 תוספות, ובשיחה הראשונה מתאימים את השילובים לאופי האירוע."],
@@ -152,6 +167,7 @@ export default function Home() {
   const [ignitionHint, setIgnitionHint] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
   const menuPhotoRef = useRef<HTMLDivElement>(null);
+  const forgePeelRef = useRef<HTMLDivElement>(null);
   const stageShellRef = useRef<HTMLDivElement>(null);
   const stageStepperRef = useRef<HTMLDivElement>(null);
   const eventsGridRef = useRef<HTMLDivElement>(null);
@@ -586,15 +602,65 @@ export default function Home() {
     if (event.detail === 0) runIgnition();
   }
 
-  function toggleIngredient(item: string) {
+  function launchTopping(source: HTMLButtonElement, topping: FocacciaTopping) {
+    if (prefersReducedMotion()) return;
+
+    const peel = forgePeelRef.current;
+    if (!peel) return;
+    const sourceRect = source.getBoundingClientRect();
+    const targetRect = peel.getBoundingClientRect();
+    if (targetRect.bottom < 0 || targetRect.top > window.innerHeight) return;
+
+    const flightSize = window.matchMedia("(pointer: coarse)").matches ? 48 : 66;
+    const sourceX = sourceRect.left + (sourceRect.width / 2);
+    const sourceY = sourceRect.top + (sourceRect.height / 2);
+    const targetX = targetRect.left + (targetRect.width * topping.x / 100);
+    const targetY = targetRect.top + (targetRect.height * topping.y / 100);
+    const deltaX = targetX - sourceX;
+    const deltaY = targetY - sourceY;
+    const arcY = Math.min(-64, (deltaY * .48) - 82);
+
+    const flight = document.createElement("span");
+    const visual = document.createElement("i");
+    flight.className = "forge-topping-flight";
+    flight.dataset.kind = topping.kind;
+    flight.dataset.sprite = topping.sprite?.toString() ?? "fallback";
+    flight.setAttribute("aria-hidden", "true");
+    flight.style.left = `${sourceX - (flightSize / 2)}px`;
+    flight.style.top = `${sourceY - (flightSize / 2)}px`;
+    flight.style.setProperty("--flight-size", `${flightSize}px`);
+    flight.style.setProperty("--sprite-position", toppingSpritePosition(topping.sprite));
+    flight.appendChild(visual);
+    document.body.appendChild(flight);
+
+    const animation = flight.animate([
+      { opacity: 0, transform: "translate3d(0, 0, 0) scale(.46) rotate(-12deg)" },
+      { opacity: 1, transform: `translate3d(${deltaX * .46}px, ${arcY}px, 0) scale(1.12) rotate(8deg)`, offset: .48 },
+      { opacity: .18, transform: `translate3d(${deltaX}px, ${deltaY}px, 0) scale(.5) rotate(-5deg)` },
+    ], {
+      duration: 640,
+      easing: "cubic-bezier(.18,.74,.18,1)",
+      fill: "forwards",
+    });
+
+    const removeFlight = () => flight.remove();
+    animation.onfinish = removeFlight;
+    animation.oncancel = removeFlight;
+  }
+
+  function toggleIngredient(topping: FocacciaTopping, source: HTMLButtonElement) {
     if (menuBakeTimerRef.current) clearTimeout(menuBakeTimerRef.current);
     setMenuBaking(false);
     setMenuBaked(false);
+    const isAdding = !selected.includes(topping.label);
     if (!prefersReducedMotion()) {
       burst(".menu-photo", window.matchMedia("(pointer: coarse)").matches ? 2 : 4, 0.46);
     }
+    if (isAdding) launchTopping(source, topping);
     setSelected((current) =>
-      current.includes(item) ? current.filter((value) => value !== item) : [...current, item],
+      current.includes(topping.label)
+        ? current.filter((value) => value !== topping.label)
+        : [...current, topping.label],
     );
   }
 
@@ -987,23 +1053,52 @@ export default function Home() {
             />
           </div>
           <div className="menu-photo-shade" aria-hidden="true" />
+          <div className="forge-assembly" aria-hidden="true">
+            <div ref={forgePeelRef} className="forge-peel-stage">
+              <img
+                className="forge-peel forge-peel-raw"
+                src="/forge/forge-peel-raw.png"
+                alt=""
+                width="1366"
+                height="1151"
+                loading="lazy"
+                decoding="async"
+              />
+              <img
+                className="forge-peel forge-peel-baked"
+                src="/forge/forge-peel-baked.png"
+                alt=""
+                width="1367"
+                height="1150"
+                loading="lazy"
+                decoding="async"
+              />
+              <div className="forge-toppings">
+                {selected.map((label) => {
+                  const topping = focacciaToppings.find((item) => item.label === label);
+                  if (!topping) return null;
+                  return (
+                    <span
+                      key={label}
+                      className="forge-topping"
+                      data-kind={topping.kind}
+                      data-sprite={topping.sprite?.toString() ?? "fallback"}
+                      style={{
+                        "--topping-x": `${topping.x}%`,
+                        "--topping-y": `${topping.y}%`,
+                        "--sprite-position": toppingSpritePosition(topping.sprite),
+                      } as CSSProperties}
+                    >
+                      <i />
+                    </span>
+                  );
+                })}
+              </div>
+              <i className="forge-heat-scan" />
+            </div>
+          </div>
           <div className="menu-forge-flame" aria-hidden="true">
             <ShaderFlame lit={menuBaking} />
-          </div>
-          <div className="ingredient-traces" aria-hidden="true">
-            {selected.slice(0, 6).map((label) => {
-              const topping = focacciaToppings.find((item) => item.label === label);
-              if (!topping) return null;
-              return (
-                <span
-                  key={label}
-                  data-kind={topping.kind}
-                  style={{ "--topping-x": `${topping.x}%`, "--topping-y": `${topping.y}%` } as CSSProperties}
-                >
-                  <i /><b>{label}</b>
-                </span>
-              );
-            })}
           </div>
           <div className="menu-forge-meter" aria-hidden="true">
             <span><b>{menuBaking ? "480" : menuBaked ? "360" : selected.length ? "180" : "080"}°</b><small>STONE HEAT</small></span>
@@ -1078,7 +1173,7 @@ export default function Home() {
                 key={item.label}
                 className={selected.includes(item.label) ? "is-selected" : ""}
                 aria-pressed={selected.includes(item.label)}
-                onClick={() => toggleIngredient(item.label)}
+                onClick={(event) => toggleIngredient(item, event.currentTarget)}
               >
                 <span>{selected.includes(item.label) ? "✓" : "+"}</span>{item.label}
               </button>

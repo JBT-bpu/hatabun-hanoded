@@ -1302,21 +1302,22 @@ main::after {
 
 .menu-image-stack > img[data-active="true"] {
   z-index: 1;
-  opacity: 1;
-  transform: scale(1);
-  filter: saturate(1) brightness(1);
+  opacity: .82;
+  transform: scale(1.07);
+  filter: saturate(.58) brightness(.42) blur(2px);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .menu-photo:hover .menu-image-stack > img[data-active="true"] { transform: scale(1.01); }
+  .menu-photo:hover .menu-image-stack > img[data-active="true"] { transform: scale(1.085); }
 }
 .menu-photo-shade {
   position: absolute;
   z-index: 2;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(9,8,7,.54), transparent 36%),
-    linear-gradient(180deg, rgba(9,8,7,.28), transparent 42%, rgba(9,8,7,.86));
+    radial-gradient(ellipse at 54% 50%, transparent 0 24%, rgba(9,8,7,.2) 58%, rgba(9,8,7,.72) 100%),
+    linear-gradient(90deg, rgba(9,8,7,.68), transparent 42%),
+    linear-gradient(180deg, rgba(9,8,7,.42), transparent 36%, rgba(9,8,7,.94));
 }
 
 .menu-mode-stamp {
@@ -1473,7 +1474,7 @@ main::after {
 
 .menu-forge-flame {
   position: absolute;
-  z-index: 3;
+  z-index: 4;
   left: 47%;
   top: 15%;
   width: 48%;
@@ -1485,72 +1486,162 @@ main::after {
   filter: drop-shadow(0 0 32px rgba(255, 84, 16, .64));
 }
 
-.ingredient-traces {
+.forge-assembly {
   position: absolute;
-  z-index: 4;
-  inset: 0;
+  z-index: 3;
+  inset: 34px 0 50px;
+  display: grid;
+  place-items: center;
   pointer-events: none;
+  transform-origin: 62% 42%;
+  will-change: transform, filter, opacity;
 }
 
-.ingredient-traces > span {
+.forge-peel-stage {
+  position: relative;
+  width: min(94%, 700px);
+  aspect-ratio: 1366 / 1151;
+  transform: perspective(900px) rotateX(var(--forge-tilt-y)) rotateY(var(--forge-tilt-x)) translateZ(0);
+  transform-origin: 54% 55%;
+  filter: drop-shadow(0 24px 28px rgba(0, 0, 0, .48));
+  transition: transform 220ms var(--ease-state), filter var(--motion-state) linear;
+  will-change: transform;
+}
+
+.forge-peel-stage::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 11% 8% 5%;
+  opacity: .42;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255, 157, 44, .48), rgba(255, 70, 12, .12) 46%, transparent 72%);
+  filter: blur(24px);
+  transition: opacity var(--motion-state) linear;
+}
+
+.forge-peel {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: fill;
+  filter: saturate(.96) contrast(1.04);
+  transition: opacity 520ms var(--ease-enter), filter 520ms var(--ease-state);
+}
+
+.forge-peel-raw { opacity: 1; }
+.forge-peel-baked { opacity: 0; }
+.menu-photo[data-baked="true"] .forge-peel-raw { opacity: 0; }
+.menu-photo[data-baked="true"] .forge-peel-baked { opacity: 1; filter: saturate(1.08) contrast(1.08) brightness(1.03); }
+.menu-photo[data-baked="true"] .forge-peel-stage::before { opacity: .72; }
+
+.forge-toppings {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: visible;
+}
+
+.forge-topping {
   position: absolute;
   left: var(--topping-x);
   top: var(--topping-y);
-  width: 19px;
-  height: 19px;
-  display: grid;
-  place-items: center;
+  display: block;
   transform: translate(-50%, -50%);
+  transform-origin: center;
   animation: forge-topping-in 420ms var(--ease-enter) both;
+  will-change: transform, filter;
 }
 
-.ingredient-traces > span::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 100%;
-  width: 1px;
-  height: 13px;
-  background: linear-gradient(0deg, rgba(255, 192, 85, .9), transparent);
+.forge-topping[data-sprite]:not([data-sprite="fallback"]) {
+  width: clamp(82px, 10vw, 126px);
+  height: clamp(70px, 8.8vw, 108px);
 }
 
-.ingredient-traces i {
+.forge-topping[data-sprite]:not([data-sprite="fallback"]) > i,
+.forge-topping-flight[data-sprite]:not([data-sprite="fallback"]) > i {
   width: 100%;
   height: 100%;
   display: block;
-  border: 2px solid rgba(255, 236, 195, .84);
-  border-radius: 50%;
-  background: #f1d8a6;
-  box-shadow: 0 0 0 3px rgba(9, 8, 7, .66), 0 0 20px rgba(255, 119, 25, .56);
+  background-image: url("/forge/forge-toppings-mvp.png");
+  background-repeat: no-repeat;
+  background-size: 300% auto;
+  background-position: var(--sprite-position) center;
+  filter: drop-shadow(0 6px 5px rgba(0, 0, 0, .34));
+  transition: transform 520ms var(--ease-state), filter 520ms linear, opacity 520ms linear;
 }
 
-.ingredient-traces b {
+.forge-topping[data-sprite="0"] > i { transform: rotate(-7deg) scale(.92); }
+.forge-topping[data-sprite="1"] > i { transform: rotate(8deg) scale(.9); }
+.forge-topping[data-sprite="2"] > i { transform: rotate(-4deg) scale(.88); }
+
+.forge-topping[data-sprite="fallback"] { width: 42px; height: 42px; }
+.forge-topping-flight[data-sprite="fallback"] { width: var(--flight-size); height: var(--flight-size); }
+
+.forge-topping[data-sprite="fallback"] > i,
+.forge-topping-flight[data-sprite="fallback"] > i {
   position: absolute;
   left: 50%;
-  bottom: calc(100% + 12px);
-  min-width: max-content;
-  padding: 3px 6px;
-  transform: translateX(-50%);
-  border: 1px solid rgba(255, 200, 107, .46);
-  background: rgba(9, 8, 7, .86);
-  color: var(--cream);
-  font-size: 8px;
-  line-height: 1;
+  top: 50%;
+  width: 22px;
+  height: 18px;
+  display: block;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(255, 236, 195, .9);
+  border-radius: 50%;
+  background: #f1d8a6;
+  box-shadow:
+    -12px 7px 0 -3px currentColor,
+    11px 8px 0 -4px currentColor,
+    0 0 14px rgba(255, 119, 25, .48);
+  color: #e9c98f;
 }
 
-.ingredient-traces span[data-kind="olive"] i,
-.ingredient-traces span[data-kind="tapenade"] i { background: #22140f; border: 4px solid #090807; box-shadow: 0 0 0 2px rgba(255, 194, 92, .72), 0 0 18px rgba(255, 92, 20, .5); }
-.ingredient-traces span[data-kind="pesto"] i,
-.ingredient-traces span[data-kind="herbs"] i { background: #58713c; border-radius: 60% 25% 60% 25%; transform: rotate(34deg); }
-.ingredient-traces span[data-kind="pepper"] i,
-.ingredient-traces span[data-kind="chilli"] i { width: 9px; border-radius: 80% 18% 80% 18%; background: #c93b18; transform: rotate(38deg); }
-.ingredient-traces span[data-kind="onion"] i { border: 3px solid #a04b6f; background: transparent; }
-.ingredient-traces span[data-kind="eggplant"] i { background: #462c4f; border-radius: 60% 40% 60% 40%; }
-.ingredient-traces span[data-kind="feta"] i { border-radius: 4px; background: #f2e2bd; transform: rotate(12deg); }
+:is(.forge-topping, .forge-topping-flight)[data-sprite="fallback"][data-kind="olive"] > i,
+:is(.forge-topping, .forge-topping-flight)[data-sprite="fallback"][data-kind="tapenade"] > i { width: 19px; height: 19px; border: 5px solid #17110d; background: transparent; color: #281713; }
+:is(.forge-topping, .forge-topping-flight)[data-sprite="fallback"][data-kind="pesto"] > i,
+:is(.forge-topping, .forge-topping-flight)[data-sprite="fallback"][data-kind="herbs"] > i { border: 1px solid #9daf6b; border-radius: 70% 18% 70% 18%; background: #506b37; color: #314d27; }
+:is(.forge-topping, .forge-topping-flight)[data-sprite="fallback"][data-kind="pepper"] > i,
+:is(.forge-topping, .forge-topping-flight)[data-sprite="fallback"][data-kind="chilli"] > i { width: 10px; height: 29px; border: 1px solid #ff8750; border-radius: 80% 18% 80% 18%; background: #be3519; color: #8f1f10; }
+:is(.forge-topping, .forge-topping-flight)[data-sprite="fallback"][data-kind="onion"] > i { width: 22px; height: 22px; border: 5px double #a9577a; background: transparent; color: #733350; }
+:is(.forge-topping, .forge-topping-flight)[data-sprite="fallback"][data-kind="eggplant"] > i { border-color: #a17d9f; border-radius: 60% 40% 60% 40%; background: #462c4f; color: #2b1933; }
+:is(.forge-topping, .forge-topping-flight)[data-sprite="fallback"][data-kind="feta"] > i { border-color: #fff0ca; border-radius: 4px; background: #e9d7ad; color: #ccb98f; }
 
-.menu-photo.is-baking .ingredient-traces > span { animation: forge-topping-sear 1680ms var(--ease-enter) both; }
-.menu-photo.is-baking .ingredient-traces b { opacity: 0; transition: opacity 180ms linear; }
-.menu-photo[data-baked="true"] .ingredient-traces i { filter: saturate(1.15) contrast(1.22); box-shadow: 0 0 0 3px rgba(37, 16, 7, .82), 0 0 14px rgba(255, 111, 18, .46); }
+.forge-heat-scan {
+  position: absolute;
+  z-index: 3;
+  inset: 17% 18% 19% 24%;
+  display: block;
+  opacity: 0;
+  border-radius: 48%;
+  background: linear-gradient(110deg, transparent 28%, rgba(255, 246, 205, .8) 48%, rgba(255, 94, 16, .38) 56%, transparent 72%);
+  mix-blend-mode: screen;
+  filter: blur(5px);
+  transform: translateX(-54%) rotate(-12deg);
+}
+
+.forge-topping-flight {
+  --flight-size: 66px;
+  position: fixed;
+  z-index: 120;
+  width: var(--flight-size);
+  height: var(--flight-size);
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 0 18px rgba(255, 112, 24, .62));
+}
+
+.menu-photo.is-baking .forge-assembly { animation: forge-peel-bake 1680ms cubic-bezier(.14,.72,.16,1) both; }
+.menu-photo.is-baking .forge-topping { animation: forge-topping-sear 1680ms var(--ease-enter) both; }
+.menu-photo.is-baking .forge-heat-scan { animation: forge-heat-scan 1180ms 180ms var(--ease-enter) both; }
+.menu-photo[data-baked="true"] .forge-topping { filter: sepia(.12) saturate(1.18) contrast(1.16) brightness(.94); }
+.menu-photo[data-baked="true"] .forge-topping[data-sprite="0"] > i { opacity: .9; transform: rotate(-5deg) scale(.98, .76); filter: sepia(.42) saturate(1.48) brightness(1.08) contrast(1.15) blur(.45px) drop-shadow(0 4px 4px rgba(0,0,0,.28)); }
+.menu-photo[data-baked="true"] .forge-topping[data-sprite="1"] > i { transform: rotate(9deg) scale(.88); filter: saturate(1.24) brightness(.82) contrast(1.32) drop-shadow(0 4px 4px rgba(0,0,0,.32)); }
+.menu-photo[data-baked="true"] .forge-topping[data-sprite="2"] > i { transform: rotate(-4deg) scale(.86); filter: saturate(.82) brightness(.7) contrast(1.38) drop-shadow(0 4px 4px rgba(0,0,0,.36)); }
 
 .menu-forge-meter {
   position: absolute;
@@ -1632,9 +1723,21 @@ main::after {
 
 .menu-bake-status span { display: block; color: #ffb43e; font-family: var(--display); font-size: 24px; }
 .menu-bake-status small { display: block; margin-top: 2px; font-size: 9px; font-weight: 800; letter-spacing: .12em; }
-.menu-photo.is-baking .menu-bake-status,
-.menu-photo[data-baked="true"] .menu-bake-status { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-2deg); }
+.menu-photo.is-baking .menu-bake-status { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-2deg); }
 .menu-photo.is-baking .menu-bake-status { animation: menu-status-pulse 760ms var(--ease-enter) both; }
+.menu-photo[data-baked="true"] .menu-bake-status {
+  inset-inline-start: auto;
+  inset-inline-end: 28px;
+  inset-block-start: auto;
+  inset-block-end: 84px;
+  min-width: 0;
+  padding: 9px 12px 8px;
+  opacity: 1;
+  transform: rotate(-2deg);
+  box-shadow: 4px 4px 0 rgba(250, 106, 26, .74);
+}
+.menu-photo[data-baked="true"] .menu-bake-status span { font-size: 17px; }
+.menu-photo[data-baked="true"] .menu-bake-status small { display: none; }
 .menu-photo[data-baked="true"] { box-shadow: 18px 18px 0 var(--orange), 0 0 54px rgba(255, 84, 27, .18); }
 
 .builder-step > span {
@@ -1767,8 +1870,23 @@ main::after {
 }
 
 @keyframes menu-image-forge {
-  0%, 100% { transform: scale(1); filter: saturate(1) brightness(1); }
-  34% { transform: scale(1.045); filter: saturate(1.25) brightness(1.34); }
+  0%, 100% { transform: scale(1.07); filter: saturate(.58) brightness(.42) blur(2px); }
+  34% { transform: scale(1.105); filter: saturate(.92) brightness(.64) blur(1px); }
+}
+
+@keyframes forge-peel-bake {
+  0%, 100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1) rotate(0); filter: brightness(1); }
+  18% { opacity: 1; }
+  46% { opacity: .58; transform: translate3d(15%, -15%, 0) scale(.7) rotate(-4deg); filter: brightness(1.38) saturate(1.28); }
+  68% { opacity: .38; transform: translate3d(17%, -17%, 0) scale(.66) rotate(-5deg); filter: brightness(1.62) saturate(1.42) blur(1px); }
+  84% { opacity: .82; }
+}
+
+@keyframes forge-heat-scan {
+  0% { opacity: 0; transform: translateX(-54%) rotate(-12deg); }
+  24% { opacity: .92; }
+  76% { opacity: .68; }
+  100% { opacity: 0; transform: translateX(62%) rotate(-12deg); }
 }
 
 @keyframes menu-status-pulse {
@@ -2499,18 +2617,18 @@ main::after {
   .menu-forge-meter b { font-size: 17px; }
   .menu-forge-meter small { display: none; }
   .menu-forge-meter > i { min-height: 31px; }
-  .ingredient-traces b,
-  .ingredient-traces > span::after { display: none; }
-  .ingredient-traces > span { width: 14px; height: 14px; }
+  .forge-assembly { inset: 42px 0 19px; }
+  .forge-peel-stage { width: min(78vw, 318px); }
+  .forge-topping[data-sprite]:not([data-sprite="fallback"]) { width: clamp(62px, 20vw, 84px); height: clamp(54px, 17vw, 72px); }
+  .forge-topping[data-sprite="fallback"] { width: 31px; height: 31px; }
+  .forge-topping[data-sprite="fallback"] > i { transform: translate(-50%, -50%) scale(.76); }
   .menu-mode-stamp { inset-inline-end: 14px; inset-block-start: 16px; }
   .menu-motif-dock { left: 8px; right: 8px; inset-block-start: 54px; grid-template-columns: repeat(4, 1fr); }
   .menu-motif { min-height: 50px; padding: 4px 2px; }
   .menu-motif img { width: 27px; height: 24px; }
   .menu-motif b { font-size: 8px; }
-  .chosen-orbit { inset-inline: 9px; inset-block-end: 9px; min-height: 44px; gap: 4px; padding: 6px 74px 6px 6px; }
-  .chosen-orbit span { min-width: 62px; padding: 6px 7px; font-size: 9px; }
-  .chosen-orbit span:nth-child(n + 5) { display: none; }
-  .menu-counter { inset-inline-start: 16px; inset-block-end: 20px; font-size: 8px; }
+  .chosen-orbit { display: none; }
+  .menu-counter { inset-inline-start: 14px; inset-block-end: 11px; padding: 4px 7px; background: rgba(9,8,7,.78); font-size: 8px; }
   .menu-counter bdi { font-size: 19px; margin-inline-end: 4px; }
   .menu-console {
     min-height: auto;
@@ -2543,6 +2661,8 @@ main::after {
   .menu-bake-button img { width: 23px; height: 23px; }
   .menu-bake-status { min-width: 164px; padding: 11px 14px 10px; }
   .menu-bake-status span { font-size: 21px; }
+  .menu-photo[data-baked="true"] .menu-bake-status { inset-inline-end: 10px; inset-block-end: 44px; min-width: 0; padding: 7px 9px 6px; }
+  .menu-photo[data-baked="true"] .menu-bake-status span { font-size: 15px; }
   .menu-console > small { margin-top: 6px; font-size: 10px; }
 
   .forge-seam {
