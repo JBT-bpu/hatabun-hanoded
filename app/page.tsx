@@ -39,32 +39,34 @@ const stages = [
 ];
 
 type FocacciaTopping = {
+  id: string;
   label: string;
   kind: string;
-  x: number;
-  y: number;
-  sprite?: 0 | 1 | 2;
+  side: "left" | "right";
+  photo: string;
+  stamp: string;
+  imprint: { x: number; y: number; rotation: number };
+  placements: [
+    { x: number; y: number; scale: number; rotation: number },
+    { x: number; y: number; scale: number; rotation: number },
+  ];
 };
 
 const focacciaToppings: FocacciaTopping[] = [
-  { label: "מוצרלה", kind: "cheese", x: 46, y: 45, sprite: 0 },
-  { label: "בולגרית", kind: "feta", x: 61, y: 36 },
-  { label: "פסטו", kind: "pesto", x: 40, y: 57 },
-  { label: "אנטיפסטי", kind: "pepper", x: 66, y: 48, sprite: 1 },
-  { label: "זיתים", kind: "olive", x: 35, y: 63, sprite: 2 },
-  { label: "חצילים", kind: "eggplant", x: 55, y: 59 },
-  { label: "בצל סגול", kind: "onion", x: 72, y: 35 },
-  { label: "חריף", kind: "chilli", x: 45, y: 69 },
-  { label: "טפנד", kind: "tapenade", x: 56, y: 28 },
-  { label: "עשבי תיבול", kind: "herbs", x: 54, y: 48 },
+  { id: "mozzarella", label: "מוצרלה", kind: "cheese", side: "left", photo: "/forge-blueprint/toppings/mozzarella.png", stamp: "/forge-blueprint/stamps/mozzarella.png", imprint: { x: 38, y: 38, rotation: -8 }, placements: [{ x: 41, y: 39, scale: .46, rotation: -10 }, { x: 60, y: 55, scale: .38, rotation: 11 }] },
+  { id: "feta", label: "בולגרית", kind: "feta", side: "right", photo: "/forge-blueprint/toppings/feta.png", stamp: "/forge-blueprint/stamps/feta.png", imprint: { x: 62, y: 33, rotation: 7 }, placements: [{ x: 60, y: 34, scale: .37, rotation: 8 }, { x: 45, y: 58, scale: .31, rotation: -12 }] },
+  { id: "pesto", label: "פסטו", kind: "pesto", side: "left", photo: "/forge-blueprint/toppings/pesto.png", stamp: "/forge-blueprint/stamps/pesto.png", imprint: { x: 40, y: 56, rotation: -13 }, placements: [{ x: 45, y: 47, scale: .34, rotation: -14 }, { x: 63, y: 62, scale: .28, rotation: 12 }] },
+  { id: "antipasti", label: "אנטיפסטי", kind: "pepper", side: "right", photo: "/forge-blueprint/toppings/antipasti.png", stamp: "/forge-blueprint/stamps/antipasti.png", imprint: { x: 66, y: 49, rotation: 12 }, placements: [{ x: 66, y: 46, scale: .34, rotation: 12 }, { x: 48, y: 66, scale: .28, rotation: -15 }] },
+  { id: "olives", label: "זיתים", kind: "olive", side: "left", photo: "/forge-blueprint/toppings/olives.png", stamp: "/forge-blueprint/stamps/olives.png", imprint: { x: 35, y: 64, rotation: 6 }, placements: [{ x: 38, y: 61, scale: .31, rotation: 7 }, { x: 69, y: 38, scale: .25, rotation: -9 }] },
+  { id: "eggplant", label: "חצילים", kind: "eggplant", side: "right", photo: "/forge-blueprint/toppings/eggplant.png", stamp: "/forge-blueprint/stamps/eggplant.png", imprint: { x: 55, y: 62, rotation: -5 }, placements: [{ x: 55, y: 62, scale: .31, rotation: -5 }, { x: 32, y: 49, scale: .25, rotation: 10 }] },
+  { id: "red-onion", label: "בצל סגול", kind: "onion", side: "left", photo: "/forge-blueprint/toppings/red-onion.png", stamp: "/forge-blueprint/stamps/red-onion.png", imprint: { x: 70, y: 36, rotation: 14 }, placements: [{ x: 68, y: 36, scale: .3, rotation: 14 }, { x: 52, y: 32, scale: .24, rotation: -8 }] },
+  { id: "chilli", label: "חריף", kind: "chilli", side: "right", photo: "/forge-blueprint/toppings/chilli.png", stamp: "/forge-blueprint/stamps/chilli.png", imprint: { x: 45, y: 70, rotation: -9 }, placements: [{ x: 47, y: 68, scale: .29, rotation: -9 }, { x: 70, y: 54, scale: .22, rotation: 16 }] },
+  { id: "tapenade", label: "טפנד", kind: "tapenade", side: "left", photo: "/forge-blueprint/toppings/tapenade.png", stamp: "/forge-blueprint/stamps/tapenade.png", imprint: { x: 56, y: 27, rotation: 5 }, placements: [{ x: 55, y: 29, scale: .29, rotation: 5 }, { x: 34, y: 55, scale: .23, rotation: -13 }] },
+  { id: "herbs", label: "עשבי תיבול", kind: "herbs", side: "right", photo: "/forge-blueprint/toppings/herbs.png", stamp: "/forge-blueprint/stamps/herbs.png", imprint: { x: 54, y: 49, rotation: -3 }, placements: [{ x: 57, y: 49, scale: .3, rotation: -3 }, { x: 43, y: 31, scale: .23, rotation: 12 }] },
 ];
 
-function toppingSpritePosition(sprite?: FocacciaTopping["sprite"]) {
-  if (sprite === 0) return "0%";
-  if (sprite === 1) return "50%";
-  if (sprite === 2) return "100%";
-  return "0%";
-}
+type MenuPhase = "idle" | "demo" | "building" | "branding" | "ready";
+const demoToppings = ["מוצרלה", "פסטו", "אנטיפסטי"];
 
 const faqs = [
   ["מה אפשר לשים על הפוקאצ׳ה?", "בוחרים מתוך מגוון של כ־10 תוספות, ובשיחה הראשונה מתאימים את השילובים לאופי האירוע."],
@@ -156,7 +158,8 @@ export default function Home() {
   const [ignitionRun, setIgnitionRun] = useState(0);
   const [activeStage, setActiveStage] = useState(0);
   const [stageTransitionKey, setStageTransitionKey] = useState(0);
-  const [selected, setSelected] = useState<string[]>(["מוצרלה", "פסטו", "אנטיפסטי"]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [menuDemoRunning, setMenuDemoRunning] = useState(false);
   const [menuBaking, setMenuBaking] = useState(false);
   const [menuBaked, setMenuBaked] = useState(false);
   const [menuBakeRun, setMenuBakeRun] = useState(0);
@@ -168,6 +171,7 @@ export default function Home() {
   const heroRef = useRef<HTMLElement>(null);
   const menuPhotoRef = useRef<HTMLDivElement>(null);
   const forgePeelRef = useRef<HTMLDivElement>(null);
+  const menuSectionRef = useRef<HTMLElement>(null);
   const stageShellRef = useRef<HTMLDivElement>(null);
   const stageStepperRef = useRef<HTMLDivElement>(null);
   const eventsGridRef = useRef<HTMLDivElement>(null);
@@ -184,6 +188,9 @@ export default function Home() {
   const finalArrivalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const galleryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menuBakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const menuDemoTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const menuDemoPlayedRef = useRef(false);
+  const menuUserInteractedRef = useRef(false);
   const stepperFrameRef = useRef(0);
   const locationsFrameRef = useRef(0);
   const litRef = useRef(false);
@@ -193,6 +200,15 @@ export default function Home() {
   const fizzleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const heatTweenRef = useRef<gsap.core.Tween | null>(null);
   const gallery = activeGallery === null ? null : eventCategories[activeGallery];
+  const menuPhase: MenuPhase = menuBaking
+    ? "branding"
+    : menuBaked
+      ? "ready"
+      : menuDemoRunning
+        ? "demo"
+        : selected.length
+          ? "building"
+          : "idle";
 
   const closeGallery = useCallback(() => {
     if (activeGallery === null || galleryPhaseRef.current === "exit") return;
@@ -431,10 +447,53 @@ export default function Home() {
       if (ignitionEndTimerRef.current) clearTimeout(ignitionEndTimerRef.current);
       if (galleryTimerRef.current) clearTimeout(galleryTimerRef.current);
       if (menuBakeTimerRef.current) clearTimeout(menuBakeTimerRef.current);
+      menuDemoTimersRef.current.forEach(clearTimeout);
+      menuDemoTimersRef.current = [];
       if (fizzleTimerRef.current) clearTimeout(fizzleTimerRef.current);
       if (chargeFrameRef.current) cancelAnimationFrame(chargeFrameRef.current);
       heatTweenRef.current?.kill();
     };
+  }, []);
+
+  useEffect(() => {
+    const section = menuSectionRef.current;
+    if (!section || menuDemoPlayedRef.current) return;
+
+    const playDemo = () => {
+      if (menuDemoPlayedRef.current || menuUserInteractedRef.current) return;
+      menuDemoPlayedRef.current = true;
+
+      if (prefersReducedMotion()) {
+        setSelected(demoToppings);
+        setMenuDemoRunning(false);
+        setMenuBaked(true);
+        return;
+      }
+
+      setMenuDemoRunning(true);
+      demoToppings.forEach((label, index) => {
+        const timer = setTimeout(() => {
+          if (menuUserInteractedRef.current) return;
+          setSelected((current) => current.includes(label) ? current : [...current, label]);
+        }, 180 + (index * 330));
+        menuDemoTimersRef.current.push(timer);
+      });
+      menuDemoTimersRef.current.push(setTimeout(() => setMenuDemoRunning(false), 1240));
+    };
+
+    if (typeof IntersectionObserver !== "function") {
+      playDemo();
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return;
+      playDemo();
+      observer.disconnect();
+    }, { threshold: .42 });
+    observer.observe(section);
+
+    return () => observer.disconnect();
   }, []);
 
   const menuHref = useMemo(() => {
@@ -502,7 +561,8 @@ export default function Home() {
     schedule(() => {
       [
         "/fire-story-filmstrip.webp",
-        "/campaign/menu-dairy.webp",
+        "/forge/forge-peel-baked.png",
+        "/forge-blueprint/focaccia-outline.png",
       ].forEach((href) => {
         const link = document.createElement("link");
         link.rel = "prefetch";
@@ -614,23 +674,20 @@ export default function Home() {
     const flightSize = window.matchMedia("(pointer: coarse)").matches ? 48 : 66;
     const sourceX = sourceRect.left + (sourceRect.width / 2);
     const sourceY = sourceRect.top + (sourceRect.height / 2);
-    const targetX = targetRect.left + (targetRect.width * topping.x / 100);
-    const targetY = targetRect.top + (targetRect.height * topping.y / 100);
+    const targetX = targetRect.left + (targetRect.width * topping.imprint.x / 100);
+    const targetY = targetRect.top + (targetRect.height * topping.imprint.y / 100);
     const deltaX = targetX - sourceX;
     const deltaY = targetY - sourceY;
     const arcY = Math.min(-64, (deltaY * .48) - 82);
 
     const flight = document.createElement("span");
-    const visual = document.createElement("i");
     flight.className = "forge-topping-flight";
     flight.dataset.kind = topping.kind;
-    flight.dataset.sprite = topping.sprite?.toString() ?? "fallback";
     flight.setAttribute("aria-hidden", "true");
     flight.style.left = `${sourceX - (flightSize / 2)}px`;
     flight.style.top = `${sourceY - (flightSize / 2)}px`;
     flight.style.setProperty("--flight-size", `${flightSize}px`);
-    flight.style.setProperty("--sprite-position", toppingSpritePosition(topping.sprite));
-    flight.appendChild(visual);
+    flight.style.backgroundImage = `url(${topping.stamp})`;
     document.body.appendChild(flight);
 
     const animation = flight.animate([
@@ -648,7 +705,15 @@ export default function Home() {
     animation.oncancel = removeFlight;
   }
 
+  function cancelMenuDemo() {
+    menuUserInteractedRef.current = true;
+    menuDemoTimersRef.current.forEach(clearTimeout);
+    menuDemoTimersRef.current = [];
+    setMenuDemoRunning(false);
+  }
+
   function toggleIngredient(topping: FocacciaTopping, source: HTMLButtonElement) {
+    cancelMenuDemo();
     if (menuBakeTimerRef.current) clearTimeout(menuBakeTimerRef.current);
     setMenuBaking(false);
     setMenuBaked(false);
@@ -665,7 +730,7 @@ export default function Home() {
   }
 
   function clearIngredients() {
-    if (!selected.length) return;
+    cancelMenuDemo();
     if (menuBakeTimerRef.current) clearTimeout(menuBakeTimerRef.current);
     setMenuBaking(false);
     setMenuBaked(false);
@@ -674,6 +739,7 @@ export default function Home() {
 
   function runMenuBake() {
     if (!selected.length || menuBaking) return;
+    cancelMenuDemo();
     if (menuBakeTimerRef.current) clearTimeout(menuBakeTimerRef.current);
     setMenuBakeRun((current) => current + 1);
     setMenuBaked(false);
@@ -684,11 +750,18 @@ export default function Home() {
     }
 
     setMenuBaking(true);
-    burst(".menu-photo", window.matchMedia("(pointer: coarse)").matches ? 28 : 46, 1.3);
+    burst(".forge-blueprint-stage", window.matchMedia("(pointer: coarse)").matches ? 28 : 46, 1.3);
     menuBakeTimerRef.current = setTimeout(() => {
       setMenuBaking(false);
       setMenuBaked(true);
     }, 1680);
+  }
+
+  function editMenuBuild() {
+    cancelMenuDemo();
+    if (menuBakeTimerRef.current) clearTimeout(menuBakeTimerRef.current);
+    setMenuBaking(false);
+    setMenuBaked(false);
   }
 
   function trackMenuForge(event: React.PointerEvent<HTMLDivElement>) {
@@ -1027,180 +1100,166 @@ export default function Home() {
         <i /><span>LIVE FIRE — FORGED ON SITE</span><i />
       </div>
 
-      <section className="menu-lab" id="menu" aria-labelledby="menu-title">
-        <div
-          ref={menuPhotoRef}
-          className={`menu-photo${menuBaking ? " is-baking" : ""}`}
-          data-baked={menuBaked ? "true" : "false"}
-          data-selected={selected.length ? "true" : "false"}
-          onPointerMove={trackMenuForge}
-          onPointerLeave={resetMenuForge}
-          data-enter
-          data-ember-zone
-          data-ember-source="menu"
-          data-ember-x="0.72"
-          data-ember-y="0.38"
-        >
-          <div className="menu-image-stack">
-            <img
-              src="/campaign/menu-dairy.webp"
-              alt="פוקאצ׳ה מוארכת עם תוספות ליד טאבון בוער"
-              data-active="true"
-              width="1123"
-              height="1401"
-              loading="lazy"
-              decoding="async"
-            />
+      <section
+        ref={menuSectionRef}
+        className="menu-lab forge-blueprint"
+        id="menu"
+        aria-labelledby="menu-title"
+        data-phase={menuPhase}
+        data-ember-zone
+        data-ember-source="menu"
+        data-ember-x="0.5"
+        data-ember-y="0.48"
+      >
+        <header className="blueprint-heading" data-enter>
+          <div className="section-index"><span>02</span><i /><p>תכנית האש</p></div>
+          <div>
+            <p className="console-kicker">FOCACCIA BLUEPRINT / נבנית באש</p>
+            <h2 id="menu-title">מתכננים. <em>חותמים באש.</em></h2>
+            <p className="blueprint-intro">בחרו חומרים, הטביעו אותם בשרטוט — ותנו לברזל הלוהט לחשוף את התוצאה.</p>
           </div>
-          <div className="menu-photo-shade" aria-hidden="true" />
-          <div className="forge-assembly" aria-hidden="true">
-            <div ref={forgePeelRef} className="forge-peel-stage">
-              <img
-                className="forge-peel forge-peel-raw"
-                src="/forge/forge-peel-raw.png"
-                alt=""
-                width="1366"
-                height="1151"
-                loading="lazy"
-                decoding="async"
-              />
-              <img
-                className="forge-peel forge-peel-baked"
-                src="/forge/forge-peel-baked.png"
-                alt=""
-                width="1367"
-                height="1150"
-                loading="lazy"
-                decoding="async"
-              />
-              <div className="forge-toppings">
+        </header>
+
+        <div className="blueprint-phase-rail" aria-label="שלבי בניית הפוקאצ׳ה">
+          <span data-active={menuPhase === "idle" || menuPhase === "demo" || menuPhase === "building"}><b>01</b> בוחרים</span>
+          <i />
+          <span data-active={menuPhase === "branding"}><b>02</b> חותמים</span>
+          <i />
+          <span data-active={menuPhase === "ready"}><b>03</b> מהאש</span>
+        </div>
+
+        <p className="blueprint-side-note">סלטים, קינוחים ועוד — סוגרים יחד בשיחה</p>
+
+        <div className="blueprint-workbench" data-enter style={enterDelay(60)}>
+          {["left", "right"].map((side) => (
+            <div className={`blueprint-stamp-rack blueprint-stamp-rack-${side}`} key={side} aria-label={side === "left" ? "תוספות צד ראשון" : "תוספות צד שני"}>
+              {focacciaToppings.filter((item) => item.side === side).map((item) => {
+                const active = selected.includes(item.label);
+                return (
+                  <button
+                    type="button"
+                    key={item.id}
+                    className={active ? "is-selected" : ""}
+                    aria-pressed={active}
+                    onClick={(event) => toggleIngredient(item, event.currentTarget)}
+                  >
+                    <span className="blueprint-stamp-visual" aria-hidden="true">
+                      <img src={item.stamp} alt="" width="180" height="180" loading="lazy" decoding="async" />
+                    </span>
+                    <b>{item.label}</b>
+                    <small>{active ? "נחתם" : "לחצו להחתמה"}</small>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+
+          <div
+            ref={menuPhotoRef}
+            className="menu-photo forge-blueprint-stage"
+            onPointerMove={trackMenuForge}
+            onPointerLeave={resetMenuForge}
+          >
+            <div ref={forgePeelRef} className="blueprint-canvas" aria-hidden="true">
+              <div className="blueprint-grid" />
+              <img className="blueprint-outline" src="/forge-blueprint/focaccia-outline.png" alt="" width="1100" height="733" loading="lazy" decoding="async" />
+              <div className="blueprint-imprints">
                 {selected.map((label) => {
                   const topping = focacciaToppings.find((item) => item.label === label);
                   if (!topping) return null;
                   return (
-                    <span
-                      key={label}
-                      className="forge-topping"
-                      data-kind={topping.kind}
-                      data-sprite={topping.sprite?.toString() ?? "fallback"}
+                    <img
+                      key={topping.id}
+                      src={topping.stamp}
+                      alt=""
+                      width="180"
+                      height="180"
                       style={{
-                        "--topping-x": `${topping.x}%`,
-                        "--topping-y": `${topping.y}%`,
-                        "--sprite-position": toppingSpritePosition(topping.sprite),
+                        "--imprint-x": `${topping.imprint.x}%`,
+                        "--imprint-y": `${topping.imprint.y}%`,
+                        "--imprint-rotation": `${topping.imprint.rotation}deg`,
                       } as CSSProperties}
-                    >
-                      <i />
-                    </span>
+                    />
                   );
                 })}
               </div>
-              <i className="forge-heat-scan" />
             </div>
+
+            {(menuBaking || menuBaked) ? (
+              <div className="blueprint-result" aria-hidden="true">
+                <img className="blueprint-baked-base" src="/forge/forge-peel-baked.png" alt="" width="1367" height="1150" decoding="async" />
+                <div className="blueprint-food-mask">
+                  {selected.flatMap((label) => {
+                    const topping = focacciaToppings.find((item) => item.label === label);
+                    if (!topping) return [];
+                    return topping.placements.map((placement, index) => (
+                      <img
+                        key={`${topping.id}-${index}`}
+                        className="blueprint-food-topping"
+                        src={topping.photo}
+                        alt=""
+                        width="512"
+                        height="512"
+                        style={{
+                          "--food-x": `${placement.x}%`,
+                          "--food-y": `${placement.y}%`,
+                          "--food-scale": placement.scale,
+                          "--food-rotation": `${placement.rotation}deg`,
+                        } as CSSProperties}
+                      />
+                    ));
+                  })}
+                </div>
+                <i className="blueprint-char" />
+                <i className="blueprint-oil" />
+                <span className="blueprint-steam blueprint-steam-one" />
+                <span className="blueprint-steam blueprint-steam-two" />
+              </div>
+            ) : null}
+
+            <div key={menuBakeRun} className="forge-strike" aria-hidden="true">
+              <div className="forge-branding-iron"><i /><span><img src="/brand/brand-camel-oven-icon-v2.webp" alt="" width="1100" height="1100" /></span></div>
+              <div className="forge-burn-wave" />
+              <div className="forge-impact-sparks">
+                {Array.from({ length: 18 }, (_, index) => (
+                  <i key={index} style={{ "--spark-angle": `${index * 20}deg`, "--spark-distance": `${64 + ((index * 17) % 94)}px` } as CSSProperties} />
+                ))}
+              </div>
+            </div>
+
+            <span className="blueprint-corner-mark blueprint-corner-one">A–02</span>
+            <span className="blueprint-corner-mark blueprint-corner-two">LIVE FIRE</span>
           </div>
-          <div className="menu-forge-flame" aria-hidden="true">
-            <ShaderFlame lit={menuBaking} />
-          </div>
-          <div className="menu-forge-meter" aria-hidden="true">
-            <span><b>{menuBaking ? "480" : menuBaked ? "360" : selected.length ? "180" : "080"}°</b><small>STONE HEAT</small></span>
-            <i><em /></i>
-          </div>
-          <div key={menuBakeRun} className="menu-bake-climax" aria-hidden="true">
-            {Array.from({ length: 18 }, (_, index) => (
-              <i
-                key={index}
-                style={{
-                  "--x": `${((index * 41) % 110) - 55}vw`,
-                  "--y": `${-(34 + ((index * 13) % 44))}vh`,
-                  "--r": `${-60 + ((index * 31) % 120)}deg`,
-                  "--delay": `${(index % 4) * 24}ms`,
-                } as CSSProperties}
-              />
-            ))}
-          </div>
-          <div className="menu-bake-status" role="status" aria-live="polite">
-            <span>{menuBaking ? "נכנסת לאש" : menuBaked ? "מוכנה מהאש" : ""}</span>
-            <small>{menuBaking ? "החום עולה" : menuBaked ? "הבחירה שלכם נצרבה" : ""}</small>
-          </div>
-          <p className="menu-mode-stamp"><span>LIVE FIRE</span> / FOCACCIA</p>
-          <div className="menu-motif-dock" aria-label="מה נכנס לחוויה">
-            {[
-              ["/brand/icon-wheat-v2.png", "בצק טרי"],
-              ["/brand/icon-peel-v2.png", "בוחרים"],
-              ["/brand/icon-flame-v2.png", "אש חיה"],
-              ["/brand/icon-oven-v2.png", "מגישים"],
-            ].map(([source, label], index) => (
-              <span
-                className="menu-motif"
-                key={source}
-                data-active={index === (menuBaking ? 2 : menuBaked ? 3 : selected.length ? 1 : 0) ? "true" : "false"}
-              >
-                <img src={source} alt="" aria-hidden="true" width="320" height="320" loading="lazy" decoding="async" />
-                <b>{label}</b>
-              </span>
-            ))}
-          </div>
-          <div className="chosen-orbit" aria-live="polite">
-            {selected.length === 0 ? <span className="chosen-empty">בחרו תוספות</span> : null}
-            {selected.slice(0, 3).map((item, index) => (
-              <span key={item} style={{ "--pos": index } as CSSProperties}>{item}</span>
-            ))}
-            {selected.length > 3 ? <span className="chosen-more">+{selected.length - 3}</span> : null}
-          </div>
-          <span className="menu-counter"><bdi>{String(selected.length).padStart(2, "0")}</bdi> נבחרו</span>
         </div>
 
-        <div className="menu-console" data-enter style={enterDelay(60)}>
-          <div className="section-index section-index-dark"><span>02</span><i /><p>מה בתפריט</p></div>
-          <p className="console-kicker">FOCACCIA BUILDER / ישר מהאש</p>
-          <h2 id="menu-title">בונים את<br /><em>הפוקאצ׳ה.</em></h2>
-          <div className="menu-range" aria-label="קטגוריות בתפריט">
-            <span data-current="true">פוקאצ׳ות</span>
-            <span>סלטים</span>
-            <span>קינוחים</span>
-            <span>ועוד בהמשך</span>
+        <div className="blueprint-action-rail">
+          <div className="blueprint-recap">
+            <span><bdi>{String(selected.length).padStart(2, "0")}</bdi> תוספות</span>
+            <p>{selected.length ? selected.join(" / ") : "השרטוט נקי — בחרו את החותמת הראשונה"}</p>
           </div>
-          <div className="builder-step">
-            <span>01</span><b>בחרו תוספות</b><small>כ־10 אפשרויות לבניית הפוקאצ׳ה</small>
+          <div className="blueprint-actions">
+            {menuBaked ? (
+              <>
+                <a className="menu-submit" href={menuHref} target="_blank" rel="noreferrer" data-ember-burst="14" data-ember-target=".forge-blueprint-stage">
+                  שלחו לוואטסאפ <span aria-hidden="true">↙</span>
+                </a>
+                <button className="blueprint-edit-button" type="button" onClick={editMenuBuild}>שנו הרכב</button>
+              </>
+            ) : (
+              <>
+                <button className="menu-bake-button" type="button" onClick={runMenuBake} disabled={!selected.length || menuBaking}>
+                  <span>{menuBaking ? "הברזל יורד…" : "חתמו באש"}</span>
+                  <img src="/brand/icon-flame-v2.png" alt="" aria-hidden="true" width="320" height="320" loading="lazy" decoding="async" />
+                </button>
+                <button className="blueprint-clear-button" type="button" onClick={clearIngredients} disabled={!selected.length}>נקו בחירה</button>
+              </>
+            )}
           </div>
-          <div className="builder-step builder-step-toppings builder-tools">
-            <p>אפשר לבחור כמה שרוצים</p>
-            <button type="button" onClick={clearIngredients} disabled={!selected.length}>נקו בחירה</button>
-          </div>
-          <div className="ingredient-grid" aria-label="בחירת תוספות">
-            {focacciaToppings.map((item) => (
-              <button
-                type="button"
-                key={item.label}
-                className={selected.includes(item.label) ? "is-selected" : ""}
-                aria-pressed={selected.includes(item.label)}
-                onClick={(event) => toggleIngredient(item, event.currentTarget)}
-              >
-                <span>{selected.includes(item.label) ? "✓" : "+"}</span>{item.label}
-              </button>
-            ))}
-          </div>
-          <div className="builder-recap" aria-live="polite">
-            <span>הפוקאצ׳ה שלכם</span>
-            <p>{selected.length ? selected.join(" / ") : "בלי תוספות כרגע — אפשר להחליט יחד"}</p>
-          </div>
-          <div className="builder-actions">
-            <button className="menu-bake-button" type="button" onClick={runMenuBake} disabled={!selected.length || menuBaking}>
-              <img src="/brand/icon-flame-v2.png" alt="" aria-hidden="true" width="320" height="320" loading="lazy" decoding="async" />
-              <span>{menuBaking ? "נכנסת לאש…" : menuBaked ? "הדליקו שוב" : "הכניסו לאש"}</span>
-            </button>
-            <a
-              className="menu-submit"
-              href={menuHref}
-              target="_blank"
-              rel="noreferrer"
-              data-ember-burst="14"
-              data-ember-target=".menu-photo"
-            >
-              שלחו לוואטסאפ <span aria-hidden="true">↙</span>
-            </a>
-          </div>
-          <small>זו התחלה לשיחה — את התפריט המדויק סוגרים יחד.</small>
         </div>
+
+        <p className="forge-live" role="status" aria-live={menuDemoRunning ? "off" : "polite"}>
+          {menuBaking ? "חותמים את ההרכב באש" : menuBaked ? "הפוקאצ׳ה נחשפה ומוכנה לשיחה" : menuDemoRunning ? "הדגמת חותמות" : selected.length ? `${selected.length} תוספות נחתמו בשרטוט` : ""}
+        </p>
       </section>
 
       <div className="forge-seam" aria-hidden="true">
