@@ -32,6 +32,10 @@ test("server-renders the branded Hebrew event site", async () => {
   assert.match(html, /אנחנו אופים/);
   assert.match(html, /שלחו לאש/);
   assert.match(html, /סלטים, קינוחים ושאר הפרטים/);
+  for (const profile of ["hero", "story", "builder", "events", "faq", "final"]) {
+    assert.match(html, new RegExp(`data-fire-profile="${profile}"`));
+  }
+  assert.doesNotMatch(html, /class="[^"]*\bember-field\b|data-ember-[\w-]+/);
   assert.doesNotMatch(html, /FOCACCIA BLUEPRINT|LIVE FIRE|FORGED ON SITE|COAL \/ FLAME/);
   assert.doesNotMatch(html, /Building your site|codex-preview|react-loading-skeleton/i);
 });
