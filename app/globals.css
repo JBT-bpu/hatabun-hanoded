@@ -2394,7 +2394,8 @@ main::after {
   }
 
   .scroll-progress { display: none; }
-  .ember-field { opacity: .48; }
+  .ember-field { opacity: .56; }
+  .site-is-dim .ember-field { opacity: .34; }
   .site-is-lit::before { opacity: calc(.76 * var(--site-heat)); }
   .site-is-lit::after { opacity: calc(.28 * var(--site-heat)); }
 
