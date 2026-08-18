@@ -59,6 +59,9 @@ export default function EmberField({ lit }: { lit: boolean }) {
     let ignitionTimer = 0;
     let ambientTimer = 0;
     let lastFrame = 0;
+    let lastScrollY = window.scrollY;
+    let scrollDistance = 0;
+    let lastScrollBurst = 0;
     let reducedMotion = reducedMotionQuery.matches;
     let pageHidden = document.hidden;
     let isLit = false;
@@ -198,8 +201,8 @@ export default function EmberField({ lit }: { lit: boolean }) {
       stopAmbient();
       if (reducedMotion || pageHidden || connection?.saveData) return;
       const delay = isLit
-        ? mobileQuery.matches ? random(1200, 1850) : random(1000, 1580)
-        : mobileQuery.matches ? random(2200, 3400) : random(1750, 2800);
+        ? mobileQuery.matches ? random(980, 1500) : random(780, 1240)
+        : mobileQuery.matches ? random(1750, 2700) : random(1350, 2150);
       ambientTimer = window.setTimeout(runAmbient, delay);
     }
 
@@ -209,8 +212,8 @@ export default function EmberField({ lit }: { lit: boolean }) {
       if (source && !reducedMotion && !pageHidden) {
         burstFrom(
           source,
-          isLit ? mobileQuery.matches ? 2 : 3 : 1,
-          isLit ? mobileQuery.matches ? 0.46 : 0.5 : 0.27,
+          isLit ? mobileQuery.matches ? 3 : 4 : 1,
+          isLit ? mobileQuery.matches ? 0.48 : 0.53 : 0.29,
         );
       }
       scheduleAmbient();
@@ -343,6 +346,26 @@ export default function EmberField({ lit }: { lit: boolean }) {
       trailLast = point;
     }
 
+    function onScroll() {
+      const currentScrollY = window.scrollY;
+      const delta = Math.min(140, Math.abs(currentScrollY - lastScrollY));
+      lastScrollY = currentScrollY;
+      if (reducedMotion || pageHidden || connection?.saveData || delta < 1) return;
+
+      scrollDistance += delta;
+      const threshold = mobileQuery.matches ? 230 : 165;
+      const now = performance.now();
+      if (scrollDistance < threshold || now - lastScrollBurst < (mobileQuery.matches ? 440 : 320)) return;
+
+      scrollDistance = 0;
+      lastScrollBurst = now;
+      burstAt(
+        { x: random(width * 0.12, width * 0.88), y: random(height * 0.84, height * 0.96) },
+        isLit ? mobileQuery.matches ? 3 : 5 : mobileQuery.matches ? 2 : 3,
+        isLit ? 0.46 : 0.31,
+      );
+    }
+
     function onPointerOver(event: PointerEvent) {
       if (!isLit || reducedMotion || pageHidden || mobileQuery.matches) return;
       const target = event.target instanceof Element ? event.target : null;
@@ -407,8 +430,13 @@ export default function EmberField({ lit }: { lit: boolean }) {
       ? new IntersectionObserver((entries) => {
           entries.forEach((entry) => {
             const source = entry.target as HTMLElement;
-            if (entry.isIntersecting) visibleSources.add(source);
-            else visibleSources.delete(source);
+            if (entry.isIntersecting) {
+              const isNewlyVisible = !visibleSources.has(source);
+              visibleSources.add(source);
+              if (isNewlyVisible && !reducedMotion && !pageHidden && !connection?.saveData) {
+                burstFrom(source, isLit ? mobileQuery.matches ? 3 : 6 : 2, isLit ? 0.48 : 0.3);
+              }
+            } else visibleSources.delete(source);
           });
         }, { threshold: 0.04 })
       : null;
@@ -437,6 +465,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
     document.addEventListener("pointerdown", onPointerDown, { passive: true });
     document.addEventListener("pointerover", onPointerOver, { passive: true });
     document.addEventListener("pointermove", onTrailMove, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("fire:burst", onFireBurst);
     window.addEventListener("resize", resize, { passive: true });
     document.addEventListener("visibilitychange", onVisibilityChange);
@@ -453,6 +482,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("pointerover", onPointerOver);
       document.removeEventListener("pointermove", onTrailMove);
+      window.removeEventListener("scroll", onScroll);
       window.removeEventListener("fire:burst", onFireBurst);
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", onVisibilityChange);
