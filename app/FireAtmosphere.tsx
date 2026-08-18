@@ -10,7 +10,7 @@ type FireBurstDetail = {
   intensity?: number;
 };
 
-type ParticleKind = "ember" | "streak" | "ash";
+type ParticleKind = "ember" | "streak" | "ash" | "debris";
 
 type Particle = {
   x: number;
@@ -22,6 +22,9 @@ type Particle = {
   size: number;
   alpha: number;
   phase: number;
+  angle: number;
+  spin: number;
+  aspect: number;
   color: string;
   kind: ParticleKind;
 };
@@ -31,6 +34,7 @@ type ProfileConfig = {
   interval: readonly [number, number];
   entry: readonly [number, number];
   force: number;
+  debris: number;
   wind?: boolean;
   staticOnly?: boolean;
 };
@@ -60,12 +64,12 @@ export const SCROLL_SPEED_THRESHOLD = 650;
 export const SCROLL_BOOST_COOLDOWN = 900;
 
 const PROFILE_CONFIG: Record<FireProfile, ProfileConfig> = {
-  hero: { ambient: [2, 4], interval: [2400, 3600], entry: [4, 6], force: 0.72 },
-  story: { ambient: [1, 3], interval: [3000, 4500], entry: [4, 6], force: 0.58 },
-  builder: { ambient: [0, 0], interval: [4200, 5200], entry: [1, 2], force: 0.42 },
-  events: { ambient: [1, 3], interval: [3200, 4600], entry: [4, 6], force: 0.5, wind: true },
-  faq: { ambient: [0, 0], interval: [5000, 6000], entry: [0, 0], force: 0, staticOnly: true },
-  final: { ambient: [2, 4], interval: [2400, 3600], entry: [0, 0], force: 0.72 },
+  hero: { ambient: [2, 4], interval: [2400, 3600], entry: [4, 6], force: 0.72, debris: 0.26 },
+  story: { ambient: [1, 3], interval: [3000, 4500], entry: [4, 6], force: 0.58, debris: 0.18 },
+  builder: { ambient: [0, 0], interval: [4200, 5200], entry: [1, 2], force: 0.42, debris: 0.34 },
+  events: { ambient: [1, 3], interval: [3200, 4600], entry: [4, 6], force: 0.5, debris: 0.14, wind: true },
+  faq: { ambient: [0, 0], interval: [5000, 6000], entry: [0, 0], force: 0, debris: 0, staticOnly: true },
+  final: { ambient: [2, 4], interval: [2400, 3600], entry: [0, 0], force: 0.72, debris: 0.3 },
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -174,14 +178,20 @@ export default function FireAtmosphere({ lit }: { lit: boolean }) {
       return Math.max(0, Math.min(requested, available));
     }
 
-    function addParticle(pocket: Pocket, force: number) {
+    function addParticle(pocket: Pocket, force: number, burstIntensity: number) {
       const wind = Boolean(pocket.config.wind);
       const heat = isLit ? 1 : 0.74;
       const kindRoll = Math.random();
-      const kind: ParticleKind = wind
-        ? kindRoll < 0.58 ? "ash" : kindRoll < 0.8 ? "ember" : "streak"
-        : kindRoll < 0.55 ? "ember" : kindRoll < 0.82 ? "streak" : "ash";
-      const hot = kind !== "ash";
+      const debrisChance = clamp(
+        pocket.config.debris + (burstIntensity >= 0.9 ? 0.12 : -0.08),
+        0,
+        0.44,
+      );
+      const kind: ParticleKind = kindRoll < debrisChance
+        ? "debris"
+        : wind
+          ? kindRoll < debrisChance + 0.46 ? "ash" : kindRoll < debrisChance + 0.7 ? "ember" : "streak"
+          : kindRoll < debrisChance + 0.4 ? "ember" : kindRoll < debrisChance + 0.68 ? "streak" : "ash";
       const depth = random(0.58, 1);
       const x = wind
         ? pocket.width * random(0.08, 0.24)
@@ -193,14 +203,34 @@ export default function FireAtmosphere({ lit }: { lit: boolean }) {
       pocket.particles.push({
         x,
         y,
-        vx: wind ? random(26, 74) * force * depth : random(-34, 34) * force * depth,
-        vy: wind ? random(-34, -8) * force * depth : random(-112, -54) * force * depth,
+        vx: wind
+          ? random(26, 74) * force * depth
+          : random(kind === "debris" ? -58 : -34, kind === "debris" ? 58 : 34) * force * depth,
+        vy: wind
+          ? random(-34, -8) * force * depth
+          : random(kind === "debris" ? -132 : -112, kind === "debris" ? -72 : -54) * force * depth,
         age: 0,
-        life: random(kind === "ash" ? 1.2 : 0.8, kind === "ash" ? 1.8 : 1.55),
-        size: random(kind === "streak" ? 1.2 : 0.8, kind === "streak" ? 2.6 : 2.2) * depth,
-        alpha: random(kind === "ash" ? 0.32 : 0.66, kind === "ash" ? 0.58 : 1) * heat,
+        life: random(
+          kind === "ash" ? 1.2 : kind === "debris" ? 0.9 : 0.8,
+          kind === "ash" ? 1.8 : kind === "debris" ? 1.45 : 1.55,
+        ),
+        size: random(
+          kind === "debris" ? 2.8 : kind === "streak" ? 1.4 : kind === "ash" ? 0.9 : 1,
+          kind === "debris" ? 5.8 : kind === "streak" ? 3 : kind === "ash" ? 2.4 : 2.8,
+        ) * depth,
+        alpha: random(
+          kind === "ash" ? 0.32 : kind === "debris" ? 0.72 : 0.66,
+          kind === "ash" ? 0.58 : 1,
+        ) * heat,
         phase: random(0, Math.PI * 2),
-        color: kind === "ash" ? "#d8c4a4" : Math.random() > 0.42 ? "#ffb43e" : "#ff541b",
+        angle: random(0, Math.PI * 2),
+        spin: random(-7.5, 7.5),
+        aspect: random(0.62, 1.48),
+        color: kind === "ash"
+          ? "#d8c4a4"
+          : kind === "debris"
+            ? Math.random() > 0.5 ? "#ff8a24" : "#ff4d18"
+            : Math.random() > 0.42 ? "#ffb43e" : "#ff541b",
         kind,
       });
     }
@@ -225,7 +255,7 @@ export default function FireAtmosphere({ lit }: { lit: boolean }) {
       if (reducedMotion || saveData) return;
       const count = trimForCapacity(clamp(Math.round(requestedCount), 1, particleCap()));
       const force = clamp(requestedIntensity, 0.24, 1.5) * pocket.config.force;
-      for (let index = 0; index < count; index += 1) addParticle(pocket, force);
+      for (let index = 0; index < count; index += 1) addParticle(pocket, force, requestedIntensity);
       startAnimation();
     }
 
@@ -234,11 +264,11 @@ export default function FireAtmosphere({ lit }: { lit: boolean }) {
       const fadeOut = Math.pow(clamp(1 - particle.age / particle.life, 0, 1), 1.4);
       context.save();
       context.globalAlpha = fadeIn * fadeOut * particle.alpha;
-      context.globalCompositeOperation = particle.kind === "ash" ? "source-over" : "lighter";
+      context.globalCompositeOperation = particle.kind === "ash" || particle.kind === "debris" ? "source-over" : "lighter";
       context.fillStyle = particle.color;
       context.strokeStyle = particle.color;
       context.shadowColor = particle.color;
-      context.shadowBlur = particle.kind === "ash" ? 0 : 4;
+      context.shadowBlur = particle.kind === "ash" ? 0 : 6;
 
       if (particle.kind === "streak") {
         context.lineWidth = Math.max(0.8, particle.size * 0.62);
@@ -246,6 +276,28 @@ export default function FireAtmosphere({ lit }: { lit: boolean }) {
         context.moveTo(particle.x, particle.y);
         context.lineTo(particle.x - particle.vx * 0.045, particle.y - particle.vy * 0.045);
         context.stroke();
+      } else if (particle.kind === "debris") {
+        context.translate(particle.x, particle.y);
+        context.rotate(particle.angle);
+        context.lineWidth = Math.max(0.8, particle.size * 0.24);
+        context.fillStyle = "#2b130d";
+        context.beginPath();
+        context.moveTo(-particle.size * particle.aspect, -particle.size * 0.34);
+        context.lineTo(particle.size * 0.58, -particle.size * 0.72);
+        context.lineTo(particle.size * particle.aspect, particle.size * 0.28);
+        context.lineTo(-particle.size * 0.42, particle.size * 0.76);
+        context.closePath();
+        context.fill();
+        context.stroke();
+      } else if (particle.kind === "ash") {
+        context.translate(particle.x, particle.y);
+        context.rotate(particle.angle);
+        context.fillRect(
+          -particle.size * particle.aspect,
+          -particle.size * 0.36,
+          particle.size * particle.aspect * 2,
+          particle.size * 0.72,
+        );
       } else {
         context.beginPath();
         context.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
@@ -261,10 +313,21 @@ export default function FireAtmosphere({ lit }: { lit: boolean }) {
         particle.age += dt;
         if (particle.age >= particle.life) return false;
         particle.vx += Math.sin(particle.phase + particle.age * 4) * 5 * dt;
-        particle.vy -= particle.kind === "ash" ? 1.4 * dt : 5 * dt;
+        if (particle.kind === "debris") {
+          particle.vy += 118 * dt;
+          particle.vx *= Math.pow(0.988, dt * 60);
+        } else {
+          particle.vy -= particle.kind === "ash" ? 1.4 * dt : 5 * dt;
+        }
+        particle.angle += particle.spin * dt;
         particle.x += particle.vx * dt;
         particle.y += particle.vy * dt;
-        if (particle.x < -30 || particle.x > pocket.width + 30 || particle.y < -30) return false;
+        if (
+          particle.x < -30
+          || particle.x > pocket.width + 30
+          || particle.y < -30
+          || particle.y > pocket.height + 30
+        ) return false;
         drawParticle(pocket.context as CanvasRenderingContext2D, particle);
         return true;
       });

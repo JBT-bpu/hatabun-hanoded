@@ -125,3 +125,11 @@ test("locks the agreed mobile budgets and scroll trigger", () => {
     assert.match(fireAtmosphere, new RegExp(`\\b${profile}:\\s*\\{`));
   }
 });
+
+test("renders physical fire debris without raising the particle budget", () => {
+  assert.match(fireAtmosphere, /type ParticleKind = [^;]*"debris"/);
+  assert.match(fireAtmosphere, /kind === "debris"[\s\S]{0,1600}context\.rotate\(particle\.angle\)/);
+  assert.match(fireAtmosphere, /particle\.vy \+= 118 \* dt/);
+  assert.match(fireAtmosphere, /debrisChance[\s\S]{0,500}burstIntensity >= 0\.9/);
+  assert.match(fireAtmosphere, /MOBILE_PARTICLE_CAP\s*=\s*20/);
+});
