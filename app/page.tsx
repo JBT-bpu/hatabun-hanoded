@@ -1269,14 +1269,18 @@ export default function Home() {
       <section className="events section-dark" id="events" aria-labelledby="events-title" data-ember-zone data-ember-source="events" data-ember-x="0.5" data-ember-y="0.72">
         <div className="section-index" data-enter><span>03</span><i /><p>הלוקיישן שלכם</p></div>
         <header className="events-heading" data-enter style={enterDelay(50)}>
-          <div>
+          <picture className="events-arrival-visual" aria-hidden="true">
+            <source media="(max-width: 760px)" srcSet="/campaign/events-arrival-mobile.png" />
+            <img src="/campaign/events-arrival-desktop.png" alt="" width="1774" height="887" loading="lazy" decoding="async" />
+          </picture>
+          <div className="events-arrival-copy">
             <div className="events-forge-mark" aria-hidden="true">
               <img src="/brand/brand-camel-oven-icon-v2.webp" alt="" width="1100" height="1100" loading="lazy" decoding="async" />
               <span><b>LIVE FIRE</b><small>ON THE ROAD / 03</small></span>
               <i />
             </div>
-            <h2 id="events-title">אנחנו מביאים<br /><em>את הלהבה.</em></h2>
-            <p>אתם רק בוחרים איפה היא נדלקת.</p>
+            <h2 id="events-title">מגיעים<br /><em>לכל מקום.</em></h2>
+            <p>לבית, לטבע, לאולם או לגן — אתם בוחרים איפה, אנחנו מגיעים עם האש.</p>
           </div>
         </header>
         <div ref={eventsGridRef} className="events-grid" data-enter style={enterDelay(120)} onScroll={handleLocationsScroll}>
