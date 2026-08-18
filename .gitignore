@@ -38,6 +38,8 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+/*.tar.gz
+/tsconfig.tsbuildinfo
 
 # Local review and attachment staging
 /.asset-review/
