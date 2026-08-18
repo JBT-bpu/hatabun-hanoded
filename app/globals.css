@@ -107,11 +107,11 @@ h1, h2, h3, p { margin-top: 0; }
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  opacity: .68;
+  opacity: .72;
   transition: opacity var(--motion-state) var(--ease-state);
 }
 
-.site-is-dim .ember-field { opacity: .22; }
+.site-is-dim .ember-field { opacity: .28; }
 
 main::before,
 main::after {
