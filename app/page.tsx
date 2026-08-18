@@ -921,7 +921,6 @@ export default function Home() {
           </div>
           <span key={ignitionRun} className="heat-wave" aria-hidden="true" />
           <div className="photo-vignette" aria-hidden="true" />
-          <p className="photo-stamp"><span>LIVE FIRE</span> / <b>01</b></p>
         </div>
 
         <div key={`ignition-climax-${ignitionRun}`} className="ignition-climax" aria-hidden="true">
@@ -946,7 +945,7 @@ export default function Home() {
             <div className="hero-brand-lockup">
               <span className="hero-brand-orbit" aria-hidden="true"><i /></span>
               <BrandEmblem />
-              <p className="poster-edition">מהדורת אירועים / 2026</p>
+              <p className="poster-edition">מגיעים עד אליכם</p>
               <h1 id="hero-title" className="sr-only">הטאבון הנודד — טאבון נייד לאירועים</h1>
             </div>
             <div className="brand-strike" aria-hidden="true" />
@@ -1002,9 +1001,7 @@ export default function Home() {
       </section>
 
       <section className="theater section-dark" id="experience" aria-labelledby="experience-title" data-ember-zone>
-        <div className="section-index" data-enter>
-          <span>01</span><i /> <p>תיאטרון האש</p>
-        </div>
+        <div className="section-index" data-enter><p>תיאטרון האש</p></div>
         <header className="editorial-heading" data-enter style={enterDelay(50)}>
           <p>לא עוד “עמדת אוכל”</p>
           <h2 id="experience-title">שלושה רגעים.<br /><em>שואו אחד.</em></h2>
@@ -1025,7 +1022,6 @@ export default function Home() {
                   onClick={() => goToStage(index)}
                   onKeyDown={(event) => handleStageKeyDown(event, index)}
                 >
-                  <span>{stage.number}</span>
                   <b>{stage.tab}</b>
                   <i aria-hidden="true" />
                 </button>
@@ -1048,10 +1044,6 @@ export default function Home() {
                     <p>{stage.label}</p>
                     <h3>{stage.title}</h3>
                     <span>{stage.text}</span>
-                    <div className="story-progress" aria-hidden="true">
-                      <i />
-                      <b>{stage.number} / 03</b>
-                    </div>
                   </article>
                 ))}
               </div>
@@ -1085,11 +1077,6 @@ export default function Home() {
                   <div className="stage-flare" />
                   <span key={stageTransitionKey} className="story-heat-wipe" />
                 </div>
-                <p className="story-live-stack">
-                  {stages.map((stage, index) => (
-                    <span key={stage.number} style={storyLayerStyle(index)}>LIVE / {stage.number}</span>
-                  ))}
-                </p>
               </div>
             </div>
           </div>
@@ -1097,7 +1084,7 @@ export default function Home() {
       </section>
 
       <div className="forge-seam" aria-hidden="true">
-        <i /><span>LIVE FIRE — FORGED ON SITE</span><i />
+        <i /><span>◆</span><i />
       </div>
 
       <section
@@ -1112,7 +1099,7 @@ export default function Home() {
         data-ember-y="0.48"
       >
         <header className="blueprint-heading" data-enter>
-          <div className="section-index"><span>02</span><i /><p>מהטאבון</p></div>
+          <div className="section-index"><p>מהטאבון</p></div>
           <div>
             <p className="console-kicker">מרכיבים ביד · אופים באש</p>
             <h2 id="menu-title">מרכיבים. <em>שולחים לאש.</em></h2>
@@ -1121,11 +1108,11 @@ export default function Home() {
         </header>
 
         <div className="blueprint-phase-rail" aria-label="שלבי בניית הפוקאצ׳ה">
-          <span data-active={menuPhase === "idle" || menuPhase === "demo" || menuPhase === "building"}><b>01</b> בוחרים</span>
+          <span data-active={menuPhase === "idle" || menuPhase === "demo" || menuPhase === "building"}>בוחרים</span>
           <i />
-          <span data-active={menuPhase === "branding"}><b>02</b> שולחים לאש</span>
+          <span data-active={menuPhase === "branding"}>שולחים לאש</span>
           <i />
-          <span data-active={menuPhase === "ready"}><b>03</b> מהאש</span>
+          <span data-active={menuPhase === "ready"}>מהאש</span>
         </div>
 
         <p className="blueprint-side-note">סלטים, קינוחים ועוד — סוגרים יחד בשיחה</p>
@@ -1227,8 +1214,6 @@ export default function Home() {
               </div>
             </div>
 
-            <span className="blueprint-corner-mark blueprint-corner-one">נעשה במקום</span>
-            <span className="blueprint-corner-mark blueprint-corner-two">אש חיה</span>
           </div>
         </div>
 
@@ -1263,11 +1248,11 @@ export default function Home() {
       </section>
 
       <div className="forge-seam" aria-hidden="true">
-        <i /><span>COAL / FLAME / STEEL</span><i />
+        <i /><span>◆</span><i />
       </div>
 
       <section className="events section-dark" id="events" aria-labelledby="events-title" data-ember-zone data-ember-source="events" data-ember-x="0.5" data-ember-y="0.72">
-        <div className="section-index" data-enter><span>03</span><i /><p>הלוקיישן שלכם</p></div>
+        <div className="section-index" data-enter><p>הלוקיישן שלכם</p></div>
         <header className="events-heading" data-enter style={enterDelay(50)}>
           <picture className="events-arrival-visual" aria-hidden="true">
             <source media="(max-width: 760px)" srcSet="/campaign/events-arrival-mobile.png" />
@@ -1276,8 +1261,7 @@ export default function Home() {
           <div className="events-arrival-copy">
             <div className="events-forge-mark" aria-hidden="true">
               <img src="/brand/brand-camel-oven-icon-v2.webp" alt="" width="1100" height="1100" loading="lazy" decoding="async" />
-              <span><b>LIVE FIRE</b><small>ON THE ROAD / 03</small></span>
-              <i />
+              <span><b>מגיעים עם האש</b><small>טאבון נייד לאירועים</small></span>
             </div>
             <h2 id="events-title">מגיעים<br /><em>לכל מקום.</em></h2>
             <p>לבית, לטבע, לאולם או לגן — אתם בוחרים איפה, אנחנו מגיעים עם האש.</p>
@@ -1305,7 +1289,6 @@ export default function Home() {
                 decoding="async"
                 style={{ viewTransitionName: activeGallery === index ? "none" : `event-gallery-${index}` }}
               />
-              <span>{category.number}</span>
               <div className="event-card-copy">
                 <p>{category.kicker}</p>
                 <h3>{category.titleLines.map((line) => <span key={line}>{line}</span>)}</h3>
@@ -1315,7 +1298,6 @@ export default function Home() {
           ))}
         </div>
         <div className="events-indicator" role="group" aria-label="מעבר בין לוקיישנים">
-          <output className="events-indicator-count" aria-live="polite"><bdi>{eventCategories[activeLocation].number} / 03</bdi></output>
           <span aria-hidden="true" />
           {eventCategories.map((category, index) => (
             <button
@@ -1332,7 +1314,7 @@ export default function Home() {
       </section>
 
       <div className="forge-seam" aria-hidden="true">
-        <i /><span>THE FIRE TRAVELS</span><i />
+        <i /><span>◆</span><i />
       </div>
 
       {gallery && (
@@ -1357,10 +1339,10 @@ export default function Home() {
                 decoding="async"
                 style={{ viewTransitionName: `event-gallery-${activeGallery}` }}
               />
-              <figcaption><bdi>01 / 01</bdi> — שער הגלריה</figcaption>
+              <figcaption>שער הגלריה</figcaption>
             </figure>
             <div className="gallery-copy">
-              <p>{gallery.number} / גלריית אירועים</p>
+              <p>גלריית אירועים</p>
               <h2 id="gallery-title">{gallery.title}</h2>
               <span>השער מוכן. את הרגעים האמיתיים מהאירועים נוסיף לכאן כשיעלו התמונות.</span>
               <button type="button" onClick={closeGallery}>חזרה לאתר ↑</button>
@@ -1371,7 +1353,7 @@ export default function Home() {
 
       <section className="answers" id="faq" aria-labelledby="faq-title" data-ember-zone data-ember-source="answers" data-ember-x="0.18" data-ember-y="0.62">
         <div className="answers-intro" data-enter>
-          <div className="section-index section-index-dark"><span>04</span><i /><p>לפני שמדליקים</p></div>
+          <div className="section-index section-index-dark"><p>לפני שמדליקים</p></div>
           <h2 id="faq-title">קצר. לעניין. <em>חם.</em></h2>
           <a href="tel:+972544669111">יש עוד שאלה? <b>דברו איתנו</b></a>
         </div>
@@ -1389,7 +1371,7 @@ export default function Home() {
                   data-ember-intensity="0.6"
                   onClick={() => toggleFaq(index)}
                 >
-                  <span>0{index + 1}</span><b>{question}</b><i aria-hidden="true">+</i>
+                  <b>{question}</b><i aria-hidden="true">+</i>
                 </button>
               </h3>
               <div
@@ -1418,7 +1400,7 @@ export default function Home() {
         />
         <div className="final-flame-line" aria-hidden="true"><i /><i /><i /><i /></div>
           <div className="final-orange">
-          <span className="final-kicker">הטאבון הנודד / LIVE FIRE</span>
+          <span className="final-kicker">הטאבון הנודד · מגיעים עם האש</span>
           <h2 id="final-title">יש אירוע באופק?<br />בואו ניתן לו <em>אש.</em></h2>
           <span className="final-orange-copy">אנחנו מגיעים, מדליקים ואופים מול האורחים. אתם נשארים עם ערב שאי אפשר לפספס.</span>
           <a href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="12" data-ember-target=".final-poster">
@@ -1433,7 +1415,7 @@ export default function Home() {
       </section>
 
       <footer className="poster-footer" data-ember-zone data-ember-source="footer" data-ember-x="0.5" data-ember-y="0.5">
-        <span>תל אביב / ישראל</span>
+        <span>תל אביב · ישראל</span>
         <span>© {new Date().getFullYear()} הטאבון הנודד</span>
         <a href="#top">חזרה לאש ↑</a>
       </footer>
