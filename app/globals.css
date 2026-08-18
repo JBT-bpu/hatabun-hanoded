@@ -185,20 +185,6 @@ main::after {
   box-shadow: 0 0 10px 3px rgba(255, 132, 40, 0.85), 0 0 3px 1px #fff1c8;
 }
 
-.scroll-progress::after {
-  content: "";
-  display: none;
-  position: absolute;
-  inset-block-end: -8px;
-  inset-inline-end: 8px;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  color: rgba(241, 231, 210, 0.38);
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: 0.22em;
-}
-
 /* Poster hero */
 .poster-hero {
   --split: 60%;
@@ -387,33 +373,6 @@ main::after {
     linear-gradient(90deg, rgba(3, 3, 2, 0.28), transparent 40%, rgba(3, 3, 2, 0.14));
 }
 
-.heat-cursor {
-  position: absolute;
-  z-index: 3;
-  inset: 0;
-  display: none;
-}
-
-.site-is-dim .heat-cursor { opacity: 0; }
-
-.photo-stamp {
-  position: absolute;
-  z-index: 4;
-  inset-inline-start: 34px;
-  inset-block-end: 32px;
-  display: flex;
-  gap: 12px;
-  margin: 0;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  color: rgba(241, 231, 210, 0.58);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.24em;
-}
-
-.photo-stamp span { color: var(--orange); }
-
 .poster-copy {
   position: relative;
   z-index: 2;
@@ -553,8 +512,6 @@ main::after {
 }
 
 .site-is-lit .emblem-crest { transform: none; }
-
-.emblem-seal { width: min(72%, 260px); aspect-ratio: 492 / 449; margin-bottom: 22px; }
 
 .poster-edition {
   position: relative;
@@ -838,8 +795,7 @@ main::after {
 
 .editorial-heading h2,
 .events-heading h2,
-.answers-intro h2,
-.final-black h2 {
+.answers-intro h2 {
   margin: 0;
   font-family: var(--display);
   font-weight: 400;
@@ -859,7 +815,6 @@ main::after {
 }
 
 .story-scroll {
-  --story-progress: 0;
   --story-coordinate: 0;
   --story-heat: 0;
   --story-heat-opacity: .06;
@@ -890,20 +845,6 @@ main::after {
   background:
     radial-gradient(circle at 67% 52%, rgba(255, 84, 27, .075), transparent 27%),
     var(--coal);
-}
-
-.stage-sticky::after {
-  content: "";
-  position: absolute;
-  z-index: 5;
-  inset-inline-start: 18px;
-  inset-block-end: 24px;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  color: rgba(241, 231, 210, .23);
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: .22em;
 }
 
 .stage-tabs {
@@ -1046,38 +987,6 @@ main::after {
   line-height: 1.75;
 }
 
-.story-progress {
-  width: min(100%, 420px);
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 16px;
-  margin-top: 46px;
-  color: rgba(241, 231, 210, .42);
-  font-size: 9px;
-  letter-spacing: .18em;
-}
-
-.story-progress::before {
-  content: "";
-  grid-column: 1;
-  grid-row: 1;
-  height: 1px;
-  background: rgba(241, 231, 210, .18);
-}
-
-.story-progress i {
-  grid-column: 1;
-  grid-row: 1;
-  height: 2px;
-  background: linear-gradient(90deg, #fff1c8, #ffb43e 40%, var(--orange));
-  box-shadow: 0 0 12px rgba(255, 84, 27, .4);
-  transform: scaleX(var(--story-progress));
-  transform-origin: right;
-}
-
-.story-progress b { font-weight: 900; }
-
 .stage-visual {
   position: relative;
   min-height: 0;
@@ -1184,28 +1093,6 @@ main::after {
 .story-scroll.is-stage-transitioning .story-arch::before { animation: oven-mouth-flash 560ms var(--ease-enter) both; }
 .story-scroll.is-stage-transitioning .stage-flare { animation: stage-flare-pulse 560ms var(--ease-enter) both; }
 
-.story-live-stack {
-  position: absolute;
-  z-index: 3;
-  inset-inline-end: 34px;
-  inset-block-end: 28px;
-  width: 90px;
-  height: 14px;
-  margin: 0;
-  color: var(--orange);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.2em;
-}
-
-.story-live-stack span {
-  position: absolute;
-  inset: 0;
-  opacity: var(--stage-alpha);
-  transform: translate3d(0, var(--stage-y), 0);
-  white-space: nowrap;
-}
-
 /* Focaccia Blueprint — one forged surface, from sketch to fire. */
 .menu-lab.forge-blueprint {
   position: relative;
@@ -1287,33 +1174,6 @@ main::after {
   line-height: 1.65;
 }
 
-.blueprint-phase-rail {
-  max-width: 980px;
-  min-height: 34px;
-  display: grid;
-  grid-template-columns: auto minmax(26px, 1fr) auto minmax(26px, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  margin: 0 auto 7px;
-  border-block: 1px solid rgba(205, 143, 72, .24);
-  color: rgba(241, 231, 210, .4);
-  direction: rtl;
-}
-
-.blueprint-phase-rail span {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 10px;
-  font-weight: 850;
-  letter-spacing: .02em;
-  transition: color 240ms linear;
-}
-
-.blueprint-phase-rail span b { color: rgba(241, 231, 210, .28); font-size: 9px; }
-.blueprint-phase-rail span[data-active="true"] { color: var(--cream); }
-.blueprint-phase-rail span[data-active="true"] b { color: var(--orange); }
-.blueprint-phase-rail > i { height: 1px; background: linear-gradient(90deg, transparent, rgba(205,143,72,.45), transparent); }
 .blueprint-side-note {
   max-width: 860px;
   margin: 0 auto 9px;
@@ -1685,18 +1545,6 @@ main::after {
   transform: rotate(var(--spark-angle));
 }
 
-.blueprint-corner-mark {
-  position: absolute;
-  z-index: 7;
-  color: rgba(241,231,210,.32);
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: .04em;
-  direction: rtl;
-}
-.blueprint-corner-one { left: 16px; top: 14px; }
-.blueprint-corner-two { right: 16px; bottom: 14px; color: rgba(255,107,35,.6); }
-
 .blueprint-action-rail {
   position: relative;
   z-index: 2;
@@ -1882,9 +1730,6 @@ main::after {
   .blueprint-heading .console-kicker { margin-bottom: 7px; font-size: 8px; }
   .blueprint-heading h2 { max-width: 360px; font-size: clamp(32px, 8.8vw, 42px); line-height: .94; }
   .blueprint-intro { max-width: 360px; margin-top: 8px; font-size: 11px; line-height: 1.45; }
-  .blueprint-phase-rail { gap: 5px; min-height: 38px; margin-inline: 6px; }
-  .blueprint-phase-rail span { gap: 3px; font-size: 8px; letter-spacing: 0; white-space: nowrap; }
-  .blueprint-phase-rail > i { min-width: 8px; }
   .blueprint-side-note { margin: 0 6px 7px; font-size: 8px; }
   .blueprint-workbench {
     display: grid;
@@ -1935,7 +1780,6 @@ main::after {
   .blueprint-heading h2 { font-size: 40px; }
   .forge-blueprint .menu-photo.forge-blueprint-stage { min-height: 196px; height: 196px; }
   .blueprint-stamp-rack button b { font-size: 7px; }
-  .blueprint-phase-rail span { font-size: 7px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2179,7 +2023,6 @@ main::after {
 .event-card:focus-visible .event-card-copy { transform: translateY(-4px); }
 
 .events-indicator { display: none; }
-.events-indicator-count { min-width: 42px; color: rgba(242, 228, 198, .6); font-size: 10px; font-weight: 900; letter-spacing: .14em; }
 .events-indicator > span { width: 52px; height: 1px; background: rgba(242, 228, 198, .22); }
 .events-indicator button { width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: transparent; cursor: pointer; }
 .events-indicator button i { width: 6px; height: 6px; border-radius: 50%; background: rgba(242, 228, 198, .32); transition: width var(--motion-fast) var(--ease-state), border-radius var(--motion-fast) var(--ease-state), background var(--motion-fast) linear; }
@@ -2448,7 +2291,6 @@ main::after {
 
 @keyframes ticker { to { transform: translateX(50%); } }
 @keyframes stage-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes ingredient-in { from { opacity: 0; transform: scale(.86); } to { opacity: 1; transform: scale(1); } }
 @keyframes editorial-enter { from { opacity: .2; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @keyframes story-wipe {
   0% { inset-block-start: -28%; opacity: 0; }
@@ -2485,20 +2327,6 @@ main::after {
   to { transform: translate3d(1%, -1%, 0) scale(1.04); filter: saturate(1.15) brightness(1.12); }
 }
 
-@keyframes forge-seam-breathe {
-  from { opacity: .72; filter: brightness(.94); transform: translateY(-50%) scaleX(.96); }
-  to { opacity: 1; filter: brightness(1.62); transform: translateY(-50%) scaleX(1.015); }
-}
-
-@keyframes forge-bloom-shift {
-  from { opacity: .62; transform: translateX(-4%) scaleX(.92); }
-  to { opacity: 1; transform: translateX(4%) scaleX(1.08); }
-}
-
-@keyframes forge-mark-breathe {
-  from { opacity: .68; filter: brightness(.9); }
-  to { opacity: 1; filter: brightness(1.5); }
-}
 @keyframes seam-ignite {
   0% { opacity: 0; transform: scaleY(0); filter: brightness(3); transform-origin: 50% 54%; }
   42% { opacity: 1; filter: brightness(2.2); }
@@ -2597,8 +2425,6 @@ main::after {
     transition: opacity var(--motion-state) linear;
     will-change: transform;
   }
-  .photo-stamp { inset-inline-start: 18px; inset-block-end: 20px; }
-
   .poster-copy { grid-column: 1; grid-row: 2; min-height: 470px; padding: 44px 18px 36px; }
   .poster-copy::before { inset: 12px; }
   .hero-brand-lockup { width: min(100%, 250px); }
@@ -2631,7 +2457,6 @@ main::after {
   .stage-tabs button b { font-size: 15px; }
   .story-scroll { height: auto; }
   .stage-sticky { min-height: 0; height: auto; position: relative; overflow: visible; }
-  .stage-sticky::after { display: none; }
   .stage-tabs { position: sticky; inset-block-start: 64px; background: rgba(9, 8, 7, .98); }
   /* Combined side-by-side layout: a small tilted "instant photo" of the
      active stage sits beside its swipeable text panel in one compact row,
@@ -2662,16 +2487,13 @@ main::after {
   }
   .stage-copy { align-self: stretch; display: flex; flex-direction: column; justify-content: center; padding: 14px 16px 16px 5px; }
   .story-filmstrip-layer,
-  .stage-word-layer,
-  .story-live-stack span { transition: opacity var(--motion-state) linear, transform var(--motion-state) var(--ease-state); }
+  .stage-word-layer { transition: opacity var(--motion-state) linear, transform var(--motion-state) var(--ease-state); }
   .stage-copy > p { margin-bottom: 9px; }
   .stage-copy h3 { margin-bottom: 10px; font-size: clamp(28px, 8.6vw, 40px); }
   .stage-copy > span { font-size: 13.5px; line-height: 1.55; }
-  .story-progress { margin-top: 14px; }
   .stage-visual { grid-row: 1; grid-column: 1; min-height: 0; border-inline-end: 1px solid var(--line-dark); border-bottom: 0; padding-block: 12px 24px; }
   .stage-arch { width: min(86%, 148px); box-shadow: 7px 7px 0 var(--orange); transform: rotate(-3deg); }
   .stage-word { font-size: 26vw; }
-  .story-live-stack { inset-inline-end: 10px; inset-block-end: 10px; width: 76px; font-size: 9px; }
   .stage-display::after { width: 34px; filter: blur(7px); }
 
   .forge-seam {
@@ -2839,7 +2661,7 @@ main::after {
   .ember-field, .heat-haze-canvas { display: none; }
   .story-scroll { --story-heat-opacity: 0 !important; }
   .stage-display::after, .story-heat-wipe { display: none; }
-  .stage-copy-panel, .stage-word-layer, .story-live-stack span { filter: none; }
+  .stage-copy-panel, .stage-word-layer { filter: none; }
   .poster-ticker > div { animation: none !important; transform: none !important; }
   .final-flame-line { opacity: .35; transform: none; }
   .ignition-lottie { display: none; }

@@ -27,11 +27,12 @@ test("server-renders the branded Hebrew event site", async () => {
   assert.match(html, /\/forge-blueprint\/focaccia-outline\.png/);
   assert.match(html, /\/forge-blueprint\/stamps\/mozzarella\.png/);
   assert.match(html, /\/brand\/brand-camel-oven-icon-v2\.webp/);
-  assert.match(html, /FOCACCIA BLUEPRINT/);
-  assert.match(html, /מתכננים\./);
-  assert.match(html, /חותמים באש\./);
-  assert.match(html, /חתמו באש/);
-  assert.match(html, /סלטים, קינוחים ועוד/);
+  assert.match(html, /הפוקאצ׳ה שלכם/);
+  assert.match(html, /בוחרים תוספות/);
+  assert.match(html, /אנחנו אופים/);
+  assert.match(html, /שלחו לאש/);
+  assert.match(html, /סלטים, קינוחים ושאר הפרטים/);
+  assert.doesNotMatch(html, /FOCACCIA BLUEPRINT|LIVE FIRE|FORGED ON SITE|COAL \/ FLAME/);
   assert.doesNotMatch(html, /Building your site|codex-preview|react-loading-skeleton/i);
 });
 

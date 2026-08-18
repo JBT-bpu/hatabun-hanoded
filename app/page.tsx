@@ -264,7 +264,6 @@ export default function Home() {
       weights[upperStage] += blend;
       const heat = Math.min(1, Math.abs(coordinate - Math.round(coordinate)) * 2);
 
-      shell.style.setProperty("--story-progress", String(progress));
       shell.style.setProperty("--story-coordinate", String(coordinate));
       shell.style.setProperty("--story-heat", String(heat));
       shell.style.setProperty("--story-heat-opacity", String(heat * 0.34));
@@ -513,7 +512,6 @@ export default function Home() {
     const shell = stageShellRef.current;
     if (shell && window.matchMedia("(max-width: 760px)").matches) {
       const progress = index / Math.max(1, stages.length - 1);
-      shell.style.setProperty("--story-progress", String(progress));
       shell.style.setProperty("--story-coordinate", String(index));
       shell.style.setProperty("--story-line", `${Math.max(0.01, progress) * 100}%`);
       shell.style.setProperty("--story-heat-x", `${(1 - progress) * 100}%`);
