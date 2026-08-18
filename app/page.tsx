@@ -1112,18 +1112,18 @@ export default function Home() {
         data-ember-y="0.48"
       >
         <header className="blueprint-heading" data-enter>
-          <div className="section-index"><span>02</span><i /><p>תכנית האש</p></div>
+          <div className="section-index"><span>02</span><i /><p>מהטאבון</p></div>
           <div>
-            <p className="console-kicker">FOCACCIA BLUEPRINT / נבנית באש</p>
-            <h2 id="menu-title">מתכננים. <em>חותמים באש.</em></h2>
-            <p className="blueprint-intro">בחרו חומרים, הטביעו אותם בשרטוט — ותנו לברזל הלוהט לחשוף את התוצאה.</p>
+            <p className="console-kicker">מרכיבים ביד · אופים באש</p>
+            <h2 id="menu-title">מרכיבים. <em>שולחים לאש.</em></h2>
+            <p className="blueprint-intro">בחרו את התוספות שלכם — אנחנו כבר נדאג לחום, לבצק ולרגע שיוצא מהטאבון.</p>
           </div>
         </header>
 
         <div className="blueprint-phase-rail" aria-label="שלבי בניית הפוקאצ׳ה">
           <span data-active={menuPhase === "idle" || menuPhase === "demo" || menuPhase === "building"}><b>01</b> בוחרים</span>
           <i />
-          <span data-active={menuPhase === "branding"}><b>02</b> חותמים</span>
+          <span data-active={menuPhase === "branding"}><b>02</b> שולחים לאש</span>
           <i />
           <span data-active={menuPhase === "ready"}><b>03</b> מהאש</span>
         </div>
@@ -1147,7 +1147,7 @@ export default function Home() {
                       <img src={item.stamp} alt="" width="180" height="180" loading="lazy" decoding="async" />
                     </span>
                     <b>{item.label}</b>
-                    <small>{active ? "נחתם" : "לחצו להחתמה"}</small>
+                    <small>{active ? "נבחר" : "הוסיפו"}</small>
                   </button>
                 );
               })}
@@ -1227,8 +1227,8 @@ export default function Home() {
               </div>
             </div>
 
-            <span className="blueprint-corner-mark blueprint-corner-one">A–02</span>
-            <span className="blueprint-corner-mark blueprint-corner-two">LIVE FIRE</span>
+            <span className="blueprint-corner-mark blueprint-corner-one">נעשה במקום</span>
+            <span className="blueprint-corner-mark blueprint-corner-two">אש חיה</span>
           </div>
         </div>
 
