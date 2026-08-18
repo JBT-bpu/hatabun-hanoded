@@ -1101,21 +1101,13 @@ export default function Home() {
         <header className="blueprint-heading" data-enter>
           <div className="section-index"><p>מהטאבון</p></div>
           <div>
-            <p className="console-kicker">מרכיבים ביד · אופים באש</p>
-            <h2 id="menu-title">מרכיבים. <em>שולחים לאש.</em></h2>
-            <p className="blueprint-intro">בחרו את התוספות שלכם — אנחנו כבר נדאג לחום, לבצק ולרגע שיוצא מהטאבון.</p>
+            <p className="console-kicker">הפוקאצ׳ה שלכם</p>
+            <h2 id="menu-title">בוחרים תוספות. <em>אנחנו אופים.</em></h2>
+            <p className="blueprint-intro">נגיעה קטנה מהחוויה: הרכיבו שילוב ושלחו אותו אל האש.</p>
           </div>
         </header>
 
-        <div className="blueprint-phase-rail" aria-label="שלבי בניית הפוקאצ׳ה">
-          <span data-active={menuPhase === "idle" || menuPhase === "demo" || menuPhase === "building"}>בוחרים</span>
-          <i />
-          <span data-active={menuPhase === "branding"}>שולחים לאש</span>
-          <i />
-          <span data-active={menuPhase === "ready"}>מהאש</span>
-        </div>
-
-        <p className="blueprint-side-note">סלטים, קינוחים ועוד — סוגרים יחד בשיחה</p>
+        <p className="blueprint-side-note">סלטים, קינוחים ושאר הפרטים נסגרים יחד בשיחה</p>
 
         <div className="blueprint-workbench" data-enter style={enterDelay(60)}>
           {["left", "right"].map((side) => (
@@ -1219,8 +1211,8 @@ export default function Home() {
 
         <div className="blueprint-action-rail">
           <div className="blueprint-recap">
-            <span><bdi>{String(selected.length).padStart(2, "0")}</bdi> תוספות</span>
-            <p>{selected.length ? selected.join(" / ") : "השרטוט נקי — בחרו את החותמת הראשונה"}</p>
+            <span>הבחירה שלכם</span>
+            <p>{selected.length ? selected.join(" · ") : "בחרו תוספות מהמגש"}</p>
           </div>
           <div className="blueprint-actions">
             {menuBaked ? (
@@ -1233,7 +1225,7 @@ export default function Home() {
             ) : (
               <>
                 <button className="menu-bake-button" type="button" onClick={runMenuBake} disabled={!selected.length || menuBaking}>
-                  <span>{menuBaking ? "הברזל יורד…" : "חתמו באש"}</span>
+                  <span>{menuBaking ? "נכנס לאש…" : "שלחו לאש"}</span>
                   <img src="/brand/icon-flame-v2.png" alt="" aria-hidden="true" width="320" height="320" loading="lazy" decoding="async" />
                 </button>
                 <button className="blueprint-clear-button" type="button" onClick={clearIngredients} disabled={!selected.length}>נקו בחירה</button>
@@ -1243,7 +1235,7 @@ export default function Home() {
         </div>
 
         <p className="forge-live" role="status" aria-live={menuDemoRunning ? "off" : "polite"}>
-          {menuBaking ? "חותמים את ההרכב באש" : menuBaked ? "הפוקאצ׳ה נחשפה ומוכנה לשיחה" : menuDemoRunning ? "הדגמת חותמות" : selected.length ? `${selected.length} תוספות נחתמו בשרטוט` : ""}
+          {menuBaking ? "ההרכב נכנס לאש" : menuBaked ? "הפוקאצ׳ה מוכנה לשיחה" : menuDemoRunning ? "הדגמת בחירה" : selected.length ? `נבחרו ${selected.length} תוספות` : ""}
         </p>
       </section>
 
