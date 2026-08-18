@@ -215,8 +215,8 @@ export default function EmberField({ lit }: { lit: boolean }) {
       stopAmbient();
       if (reducedMotion || pageHidden || connection?.saveData) return;
       const delay = isLit
-        ? mobileQuery.matches ? random(980, 1500) : random(780, 1240)
-        : mobileQuery.matches ? random(1750, 2700) : random(1350, 2150);
+        ? mobileQuery.matches ? random(820, 1320) : random(780, 1240)
+        : mobileQuery.matches ? random(1250, 1950) : random(1350, 2150);
       ambientTimer = window.setTimeout(runAmbient, delay);
     }
 
@@ -226,8 +226,8 @@ export default function EmberField({ lit }: { lit: boolean }) {
       if (source && !reducedMotion && !pageHidden) {
         burstFrom(
           source,
-          isLit ? mobileQuery.matches ? 3 : 4 : 1,
-          isLit ? mobileQuery.matches ? 0.48 : 0.53 : 0.29,
+          isLit ? mobileQuery.matches ? 4 : 4 : mobileQuery.matches ? 2 : 1,
+          isLit ? mobileQuery.matches ? 0.54 : 0.53 : mobileQuery.matches ? 0.37 : 0.29,
         );
       }
       scheduleAmbient();
@@ -385,7 +385,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
       if (reducedMotion || pageHidden || connection?.saveData || delta < 1) return;
 
       scrollDistance += delta;
-      const threshold = mobileQuery.matches ? 230 : 165;
+      const threshold = mobileQuery.matches ? 185 : 165;
       const now = performance.now();
       if (scrollDistance < threshold || now - lastScrollBurst < (mobileQuery.matches ? 440 : 320)) return;
 
@@ -395,8 +395,8 @@ export default function EmberField({ lit }: { lit: boolean }) {
       if (!source) return;
       burstFrom(
         source,
-        isLit ? mobileQuery.matches ? 2 : 4 : mobileQuery.matches ? 1 : 2,
-        isLit ? 0.42 : 0.27,
+        isLit ? mobileQuery.matches ? 3 : 4 : mobileQuery.matches ? 2 : 2,
+        isLit ? mobileQuery.matches ? 0.48 : 0.42 : mobileQuery.matches ? 0.34 : 0.27,
       );
     }
 
@@ -469,7 +469,11 @@ export default function EmberField({ lit }: { lit: boolean }) {
               const isNewlyVisible = !visibleSources.has(source);
               visibleSources.add(source);
               if (isNewlyVisible && !reducedMotion && !pageHidden && !connection?.saveData) {
-                burstFrom(source, isLit ? mobileQuery.matches ? 3 : 6 : 2, isLit ? 0.48 : 0.3);
+                burstFrom(
+                  source,
+                  isLit ? mobileQuery.matches ? 4 : 6 : mobileQuery.matches ? 3 : 2,
+                  isLit ? mobileQuery.matches ? 0.54 : 0.48 : mobileQuery.matches ? 0.38 : 0.3,
+                );
               }
             } else visibleSources.delete(source);
           });
