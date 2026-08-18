@@ -2053,12 +2053,33 @@ main::after {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-self: end;
+  justify-self: start;
   padding: clamp(26px, 4vw, 62px);
+  opacity: 0;
+  transform: translateX(52px);
+  transition: opacity 620ms var(--ease-enter), transform 760ms var(--ease-enter);
+}
+
+.events-heading.is-entered .events-arrival-copy {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .events-heading h2 { font-size: clamp(70px, 7.4vw, 118px); }
 .events-arrival-copy > p { max-width: 390px; margin: 22px 0 0; color: rgba(241, 231, 210, .65); font-size: 17px; line-height: 1.65; }
+
+@supports (animation-timeline: view()) {
+  .events-arrival-visual img {
+    animation: events-travel-pan linear both;
+    animation-timeline: view();
+    animation-range: entry 0% exit 100%;
+  }
+}
+
+@keyframes events-travel-pan {
+  from { transform: translateX(-2.4%) scale(1.07); }
+  to { transform: translateX(2.4%) scale(1.07); }
+}
 
 .events-forge-mark {
   position: relative;
@@ -2595,8 +2616,10 @@ main::after {
   .poster-cta { min-height: 54px; flex: 1; gap: 18px; }
   .poster-text-link { flex: 0 0 auto; align-self: center; white-space: nowrap; }
 
-  .ignition { inset-inline-start: 50%; inset-block-start: var(--mobile-photo-h); width: 92px; height: 92px; }
-  .ignition-animation { width: 44px; height: 44px; margin-bottom: -3px; }
+  .ignition { inset-inline-start: 50%; inset-block-start: calc(var(--mobile-photo-h) - 10px); width: 78px; height: 78px; }
+  .ignition-animation { width: 37px; height: 37px; margin-bottom: -4px; }
+  .ignition b { font-size: 11px; }
+  .ignition small { font-size: 7px; }
   .poster-ticker { grid-column: 1; grid-row: 3; }
 
   .section-dark { padding: 46px 16px; }
@@ -2684,7 +2707,7 @@ main::after {
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    justify-self: end;
+    justify-self: start;
     padding: 10px 11px;
   }
   .events-heading h2 { font-size: clamp(29px, 9vw, 40px); line-height: .86; }
@@ -2823,6 +2846,8 @@ main::after {
   .final-flame-line { opacity: .35; transform: none; }
   .ignition-lottie { display: none; }
   .ignition-animation .ignition-fallback { opacity: 1; }
+  .events-arrival-copy { opacity: 1; transform: none; }
+  .events-arrival-visual img { animation: none !important; transform: none; }
 }
 
 /* ===== Ignition ritual ===== */
