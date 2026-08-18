@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import gsap from "gsap";
-import EmberField from "./EmberField";
+import FireAtmosphere, { type FireProfile } from "./FireAtmosphere";
 import HeatHaze from "./HeatHaze";
 import LottieFlame from "./LottieFlame";
 import SmoothScroll, { lenisStore, scrollWindowTo } from "./SmoothScroll";
@@ -130,9 +130,9 @@ function withViewTransition(update: () => void) {
   update();
 }
 
-function burst(selector: string, count: number, intensity = 1) {
-  window.dispatchEvent(new CustomEvent("fire:burst", {
-    detail: { selector, count, intensity },
+function burst(profile: FireProfile, count: number, intensity = 1) {
+  window.dispatchEvent(new CustomEvent("fire-pocket:burst", {
+    detail: { profile, count, intensity },
   }));
 }
 
@@ -333,7 +333,7 @@ export default function Home() {
           finale?.setAttribute("data-arrived", "true");
           finale?.classList.add("is-arrived", "is-arriving");
           finalArrivalTimerRef.current = setTimeout(() => finale?.classList.remove("is-arriving"), 760);
-          burst(".final-poster", window.matchMedia("(pointer: coarse)").matches ? 6 : 10, 0.58);
+          burst("final", window.matchMedia("(pointer: coarse)").matches ? 4 : 6, 0.72);
           finaleObserver?.disconnect();
         }, { threshold: 0.34 })
       : null;
@@ -423,7 +423,7 @@ export default function Home() {
       };
     }
 
-    document.documentElement.style.setProperty("--site-heat", "0");
+    document.documentElement.style.setProperty("--site-heat", ".7");
     const autoIgnite = () => {
       if (!litRef.current && !chargingRef.current) runIgnition();
     };
@@ -527,7 +527,7 @@ export default function Home() {
     if (!animate || prefersReducedMotion()) return;
     shell?.classList.add("is-stage-transitioning");
     setStageTransitionKey((current) => current + 1);
-    burst(".story-arch", window.matchMedia("(pointer: coarse)").matches ? 5 : 8, 0.58);
+    if (changed) burst("story", window.matchMedia("(pointer: coarse)").matches ? 5 : 8, 0.74);
 
     if (stageTransitionTimerRef.current) clearTimeout(stageTransitionTimerRef.current);
     stageTransitionTimerRef.current = setTimeout(() => {
@@ -595,7 +595,7 @@ export default function Home() {
       ignitionFrameRef.current = 0;
       setIgniting(true);
       const coarse = window.matchMedia("(pointer: coarse)").matches;
-      burst(".poster-photo", coarse ? 28 : 44, 1.24);
+      burst("hero", coarse ? 26 : 40, 1.3);
       ignitionEndTimerRef.current = setTimeout(() => setIgniting(false), 1220);
     });
   }
@@ -716,9 +716,6 @@ export default function Home() {
     setMenuBaking(false);
     setMenuBaked(false);
     const isAdding = !selected.includes(topping.label);
-    if (!prefersReducedMotion()) {
-      burst(".menu-photo", window.matchMedia("(pointer: coarse)").matches ? 2 : 4, 0.46);
-    }
     if (isAdding) launchTopping(source, topping);
     setSelected((current) =>
       current.includes(topping.label)
@@ -748,7 +745,7 @@ export default function Home() {
     }
 
     setMenuBaking(true);
-    burst(".forge-blueprint-stage", window.matchMedia("(pointer: coarse)").matches ? 28 : 46, 1.3);
+    burst("builder", window.matchMedia("(pointer: coarse)").matches ? 10 : 14, 1.24);
     menuBakeTimerRef.current = setTimeout(() => {
       setMenuBaking(false);
       setMenuBaked(true);
@@ -872,7 +869,7 @@ export default function Home() {
     >
       <SmoothScroll />
       <CinematicScroll />
-      <EmberField lit={lit} />
+      <FireAtmosphere lit={lit} />
       <a className="skip-link" href="#experience">דילוג לתוכן</a>
       <div className="scroll-progress" aria-hidden="true"><i className="scroll-progress-ember" /></div>
 
@@ -881,7 +878,6 @@ export default function Home() {
         className="poster-hero"
         id="top"
         aria-labelledby="hero-title"
-        data-ember-zone
       >
         <header className="poster-nav">
           <a className="nav-brand" href="#top" aria-label="הטאבון הנודד — חזרה לראש העמוד">
@@ -898,9 +894,6 @@ export default function Home() {
         <div
           className="poster-photo"
           aria-label="טאבון נייד בוער באירוע ערב"
-          data-ember-source="hero"
-          data-ember-x="0.5"
-          data-ember-y="0.55"
         >
           <picture>
             <source media="(max-width: 760px)" srcSet="/campaign/hero-taboon-centered-mobile.webp" />
@@ -914,6 +907,7 @@ export default function Home() {
             />
           </picture>
           <HeatHaze src="/campaign/hero-taboon-centered.webp" lit={lit} />
+          <span className="fire-pocket" data-fire-pocket data-fire-profile="hero" aria-hidden="true" />
           <div className="shader-flame-dock" aria-hidden="true">
             <ShaderFlame lit={lit} />
           </div>
@@ -961,7 +955,7 @@ export default function Home() {
               טאבון שמגיע אליכם, נדלק מול האורחים ומוציא פוקאצ׳ות חמות בדיוק כשהערב מתחיל לזוז.
             </p>
             <div className="poster-actions">
-              <a className="poster-cta" href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="12" data-ember-target=".poster-photo">
+              <a className="poster-cta" href={mainWhatsapp} target="_blank" rel="noreferrer" onClick={() => burst("hero", window.matchMedia("(pointer: coarse)").matches ? 4 : 6, .78)}>
                 <span>קבלו הצעה לאירוע</span><i aria-hidden="true">↙</i>
               </a>
               <a className="poster-text-link" href="#experience">כנסו לחוויה <span aria-hidden="true">↓</span></a>
@@ -998,7 +992,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="theater section-dark" id="experience" aria-labelledby="experience-title" data-ember-zone>
+      <section className="theater section-dark" id="experience" aria-labelledby="experience-title">
         <div className="section-index" data-enter><p>תיאטרון האש</p></div>
         <header className="editorial-heading" data-enter style={enterDelay(50)}>
           <p>לא עוד “עמדת אוכל”</p>
@@ -1058,9 +1052,6 @@ export default function Home() {
                 ))}
                 <div
                   className="stage-arch story-arch"
-                  data-ember-source="stage"
-                  data-ember-x="0.5"
-                  data-ember-y="0.48"
                 >
                   <div className="story-filmstrip" aria-hidden="true">
                     {stages.map((filmStage, index) => (
@@ -1073,6 +1064,7 @@ export default function Home() {
                     ))}
                   </div>
                   <div className="stage-flare" />
+                  <span className="fire-pocket" data-fire-pocket data-fire-profile="story" aria-hidden="true" />
                   <span key={stageTransitionKey} className="story-heat-wipe" />
                 </div>
               </div>
@@ -1091,10 +1083,6 @@ export default function Home() {
         id="menu"
         aria-labelledby="menu-title"
         data-phase={menuPhase}
-        data-ember-zone
-        data-ember-source="menu"
-        data-ember-x="0.5"
-        data-ember-y="0.48"
       >
         <header className="blueprint-heading" data-enter>
           <div className="section-index"><p>מהטאבון</p></div>
@@ -1137,6 +1125,7 @@ export default function Home() {
             onPointerMove={trackMenuForge}
             onPointerLeave={resetMenuForge}
           >
+            <span className="fire-pocket" data-fire-pocket data-fire-profile="builder" aria-hidden="true" />
             <div ref={forgePeelRef} className="blueprint-canvas" aria-hidden="true">
               <div className="blueprint-grid" />
               <img className="blueprint-outline" src="/forge-blueprint/focaccia-outline.png" alt="" width="1100" height="733" loading="lazy" decoding="async" />
@@ -1215,7 +1204,7 @@ export default function Home() {
           <div className="blueprint-actions">
             {menuBaked ? (
               <>
-                <a className="menu-submit" href={menuHref} target="_blank" rel="noreferrer" data-ember-burst="14" data-ember-target=".forge-blueprint-stage">
+                <a className="menu-submit" href={menuHref} target="_blank" rel="noreferrer" onClick={() => burst("builder", window.matchMedia("(pointer: coarse)").matches ? 4 : 6, .76)}>
                   שלחו לוואטסאפ <span aria-hidden="true">↙</span>
                 </a>
                 <button className="blueprint-edit-button" type="button" onClick={editMenuBuild}>שנו הרכב</button>
@@ -1241,9 +1230,10 @@ export default function Home() {
         <i /><span>◆</span><i />
       </div>
 
-      <section className="events section-dark" id="events" aria-labelledby="events-title" data-ember-zone data-ember-source="events" data-ember-x="0.5" data-ember-y="0.72">
+      <section className="events section-dark" id="events" aria-labelledby="events-title">
         <div className="section-index" data-enter><p>הלוקיישן שלכם</p></div>
         <header className="events-heading" data-enter style={enterDelay(50)}>
+          <span className="fire-pocket" data-fire-pocket data-fire-profile="events" aria-hidden="true" />
           <picture className="events-arrival-visual" aria-hidden="true">
             <source media="(max-width: 760px)" srcSet="/campaign/events-arrival-mobile.png" />
             <img src="/campaign/events-arrival-desktop.png" alt="" width="1774" height="887" loading="lazy" decoding="async" />
@@ -1267,7 +1257,6 @@ export default function Home() {
               aria-label={`פתיחת גלריית אירועים ${category.title}`}
               onFocus={() => setActiveLocation(index)}
               onClick={(event) => openGallery(index, event.currentTarget)}
-              data-ember-burst="8"
             >
               <img
                 src={category.image}
@@ -1341,7 +1330,8 @@ export default function Home() {
         </div>
       )}
 
-      <section className="answers" id="faq" aria-labelledby="faq-title" data-ember-zone data-ember-source="answers" data-ember-x="0.18" data-ember-y="0.62">
+      <section className="answers" id="faq" aria-labelledby="faq-title">
+        <span className="fire-pocket" data-fire-pocket data-fire-profile="faq" aria-hidden="true" />
         <div className="answers-intro" data-enter>
           <div className="section-index section-index-dark"><p>לפני שמדליקים</p></div>
           <h2 id="faq-title">קצר. לעניין. <em>חם.</em></h2>
@@ -1357,8 +1347,6 @@ export default function Home() {
                   type="button"
                   aria-expanded={openFaq === index}
                   aria-controls={`faq-panel-${index}`}
-                  data-ember-burst="4"
-                  data-ember-intensity="0.6"
                   onClick={() => toggleFaq(index)}
                 >
                   <b>{question}</b><i aria-hidden="true">+</i>
@@ -1378,7 +1366,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section ref={finalRef} className="final-poster" aria-labelledby="final-title" data-arrived="false" data-ember-zone data-ember-source="final" data-ember-x="0.49" data-ember-y="0.48">
+      <section ref={finalRef} className="final-poster" aria-labelledby="final-title" data-arrived="false">
         <img
           className="final-scene-image"
           src="/campaign/final-poster-wide.webp"
@@ -1388,12 +1376,13 @@ export default function Home() {
           loading="lazy"
           decoding="async"
         />
+        <span className="fire-pocket" data-fire-pocket data-fire-profile="final" aria-hidden="true" />
         <div className="final-flame-line" aria-hidden="true"><i /><i /><i /><i /></div>
           <div className="final-orange">
           <span className="final-kicker">הטאבון הנודד · מגיעים עם האש</span>
           <h2 id="final-title">יש אירוע באופק?<br />בואו ניתן לו <em>אש.</em></h2>
           <span className="final-orange-copy">אנחנו מגיעים, מדליקים ואופים מול האורחים. אתם נשארים עם ערב שאי אפשר לפספס.</span>
-          <a href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="12" data-ember-target=".final-poster">
+          <a href={mainWhatsapp} target="_blank" rel="noreferrer" onClick={() => burst("final", window.matchMedia("(pointer: coarse)").matches ? 4 : 6, .8)}>
             <span>מדליקים את התאריך</span><i>↙</i>
           </a>
           <div className="final-contacts">
@@ -1404,15 +1393,15 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="poster-footer" data-ember-zone data-ember-source="footer" data-ember-x="0.5" data-ember-y="0.5">
+      <footer className="poster-footer">
         <span>תל אביב · ישראל</span>
         <span>© {new Date().getFullYear()} הטאבון הנודד</span>
         <a href="#top">חזרה לאש ↑</a>
       </footer>
 
       <div className="mobile-bar">
-        <a href={mainWhatsapp} target="_blank" rel="noreferrer" data-ember-burst="7">WhatsApp</a>
-        <a href="tel:+972544669111" data-ember-burst="6">חייגו</a>
+        <a href={mainWhatsapp} target="_blank" rel="noreferrer">WhatsApp</a>
+        <a href="tel:+972544669111">חייגו</a>
       </div>
     </main>
   );

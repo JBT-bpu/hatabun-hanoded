@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const [page, css] = await Promise.all([
+const [page, css, fireAtmosphere] = await Promise.all([
   readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
   readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  readFile(new URL("../app/FireAtmosphere.tsx", import.meta.url), "utf8"),
 ]);
 
 function cssRulesFor(className) {
@@ -93,4 +94,34 @@ test("provides a reduced-motion CSS fallback", () => {
     true,
     "reduced-motion rules must suppress transitions",
   );
+});
+
+test("uses local fire pockets instead of a global ember layer", () => {
+  const source = `${page}\n${css}`;
+  assert.match(page, /\bFireAtmosphere\b/);
+  assertAbsent(source, /\bEmberField\b/, "legacy EmberField remains");
+  assertAbsent(source, /className=["'][^"']*\bember-field\b/, "global ember canvas remains");
+  assertAbsent(source, /data-ember-[\w-]+/, "legacy ember data hook remains");
+  assertAbsent(source, /["']fire:burst["']/, "legacy selector burst event remains");
+  assertAbsent(css, /main::before\s*,\s*main::after/, "fixed whole-page heat screens remain");
+  assertAbsent(fireAtmosphere, /addEventListener\(\s*["']pointermove["']/, "mouse ember trail remains");
+});
+
+test("keeps local warmth when motion or data saving disables particles", () => {
+  assert.match(fireAtmosphere, /prefers-reduced-motion\s*:\s*reduce/);
+  assert.match(fireAtmosphere, /navigator[\s\S]{0,180}\bconnection\b[\s\S]{0,180}\bsaveData\b/);
+  assert.match(fireAtmosphere, /IntersectionObserver/);
+  assert.match(css, /\.fire-pocket::before[\s\S]{0,900}radial-gradient/);
+  assert.match(css, /\.fire-pocket__canvas\s*,\s*\.heat-haze-canvas\s*\{\s*display:\s*none/);
+  assertAbsent(css, /\.fire-pocket\s*\{[^}]*display\s*:\s*none/is, "reduced-motion hides static fire warmth");
+});
+
+test("locks the agreed mobile budgets and scroll trigger", () => {
+  assert.match(fireAtmosphere, /DESKTOP_PARTICLE_CAP\s*=\s*36/);
+  assert.match(fireAtmosphere, /MOBILE_PARTICLE_CAP\s*=\s*20/);
+  assert.match(fireAtmosphere, /SCROLL_SPEED_THRESHOLD\s*=\s*650/);
+  assert.match(fireAtmosphere, /SCROLL_BOOST_COOLDOWN\s*=\s*900/);
+  for (const profile of ["hero", "story", "builder", "events", "faq", "final"]) {
+    assert.match(fireAtmosphere, new RegExp(`\\b${profile}:\\s*\\{`));
+  }
 });
