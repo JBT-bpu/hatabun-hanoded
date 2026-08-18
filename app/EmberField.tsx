@@ -123,8 +123,11 @@ export default function EmberField({ lit }: { lit: boolean }) {
 
       const kindRoll = Math.random();
       const highHeat = force >= 1.1;
+      const lowAmbient = force < 0.4;
       const kind: Ember["kind"] = highHeat
         ? kindRoll < 0.34 ? 0 : kindRoll < 0.56 ? 1 : kindRoll < 0.72 ? 2 : 3
+        : lowAmbient
+          ? kindRoll < 0.64 ? 0 : kindRoll < 0.9 ? 1 : 2
         : kindRoll < 0.52 ? 0 : kindRoll < 0.8 ? 1 : kindRoll < 0.9 ? 2 : 3;
       const depth = random(0.48, 1);
       const direction = random(-Math.PI * 0.92, -Math.PI * 0.08);
@@ -193,16 +196,22 @@ export default function EmberField({ lit }: { lit: boolean }) {
 
     function scheduleAmbient() {
       stopAmbient();
-      if (!isLit || reducedMotion || pageHidden || connection?.saveData) return;
-      const delay = mobileQuery.matches ? random(1050, 1680) : random(880, 1420);
+      if (reducedMotion || pageHidden || connection?.saveData) return;
+      const delay = isLit
+        ? mobileQuery.matches ? random(1200, 1850) : random(1000, 1580)
+        : mobileQuery.matches ? random(2200, 3400) : random(1750, 2800);
       ambientTimer = window.setTimeout(runAmbient, delay);
     }
 
     function runAmbient() {
       ambientTimer = 0;
       const source = nearestVisibleSource();
-      if (source && isLit && !reducedMotion && !pageHidden) {
-        burstFrom(source, mobileQuery.matches ? 2 : 3, mobileQuery.matches ? 0.48 : 0.52);
+      if (source && !reducedMotion && !pageHidden) {
+        burstFrom(
+          source,
+          isLit ? mobileQuery.matches ? 2 : 3 : 1,
+          isLit ? mobileQuery.matches ? 0.46 : 0.5 : 0.27,
+        );
       }
       scheduleAmbient();
     }
@@ -369,7 +378,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
       if (pageHidden) {
         stopAmbient();
         stopAndClear();
-      } else if (isLit) {
+      } else {
         scheduleAmbient();
       }
     }
@@ -379,7 +388,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
       if (reducedMotion) {
         stopAmbient();
         stopAndClear();
-      } else if (isLit) {
+      } else {
         scheduleAmbient();
       }
     }
@@ -417,11 +426,13 @@ export default function EmberField({ lit }: { lit: boolean }) {
         } else {
           stopAmbient();
           stopAndClear();
+          scheduleAmbient();
         }
       },
     };
 
     resize();
+    scheduleAmbient();
     document.addEventListener("click", onClick);
     document.addEventListener("pointerdown", onPointerDown, { passive: true });
     document.addEventListener("pointerover", onPointerOver, { passive: true });
