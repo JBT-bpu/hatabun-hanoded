@@ -14,6 +14,7 @@ type Ember = {
   depth: number;
   kind: 0 | 1 | 2 | 3;
   color: string;
+  zone: HTMLElement | null;
 };
 
 type Point = { x: number; y: number };
@@ -120,7 +121,19 @@ export default function EmberField({ lit }: { lit: boolean }) {
       }
     }
 
-    function addEmber(origin: Point, force: number) {
+    function zoneFor(element: HTMLElement | null) {
+      return element?.closest<HTMLElement>("[data-ember-zone]") || null;
+    }
+
+    function zoneAt(point: Point) {
+      const target = document.elementFromPoint(
+        clamp(point.x, 0, Math.max(0, width - 1)),
+        clamp(point.y, 0, Math.max(0, height - 1)),
+      );
+      return target?.closest<HTMLElement>("[data-ember-zone]") || null;
+    }
+
+    function addEmber(origin: Point, force: number, zone: HTMLElement | null = null) {
       const cap = particleCap();
       if (particles.length >= cap) particles.shift();
 
@@ -150,6 +163,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
         depth,
         kind,
         color: kind === 2 ? "#f1e7d2" : kind === 3 ? "#fff1c8" : Math.random() > 0.38 ? "#ffb43e" : "#ff541b",
+        zone,
       });
     }
 
@@ -159,18 +173,18 @@ export default function EmberField({ lit }: { lit: boolean }) {
       animationFrame = requestAnimationFrame(frame);
     }
 
-    function burstAt(origin: Point, requestedCount: number, requestedIntensity = 1) {
+    function burstAt(origin: Point, requestedCount: number, requestedIntensity = 1, zone: HTMLElement | null = null) {
       if (reducedMotion || pageHidden) return;
 
       const cap = particleCap();
       const count = clamp(Math.round(Number.isFinite(requestedCount) ? requestedCount : 16), 1, cap);
       const intensity = clamp(Number.isFinite(requestedIntensity) ? requestedIntensity : 1, 0.2, 2);
-      for (let index = 0; index < count; index += 1) addEmber(origin, intensity);
+      for (let index = 0; index < count; index += 1) addEmber(origin, intensity, zone);
       startAnimation();
     }
 
     function burstFrom(element: HTMLElement | null, count: number, intensity = 1) {
-      if (element) burstAt(pointFrom(element), count, intensity);
+      if (element) burstAt(pointFrom(element), count, intensity, zoneFor(element));
     }
 
     function nearestVisibleSource() {
@@ -220,6 +234,20 @@ export default function EmberField({ lit }: { lit: boolean }) {
     }
 
     function drawParticle(particle: Ember) {
+      if (particle.zone) {
+        if (!particle.zone.isConnected) return;
+        const rect = particle.zone.getBoundingClientRect();
+        const clipLeft = Math.max(0, rect.left);
+        const clipRight = Math.min(width, rect.right);
+        const clipTop = Math.max(0, rect.top);
+        const clipBottom = Math.min(height, rect.bottom);
+        if (clipRight <= clipLeft || clipBottom <= clipTop) return;
+        context.save();
+        context.beginPath();
+        context.rect(clipLeft, clipTop, clipRight - clipLeft, clipBottom - clipTop);
+        context.clip();
+      }
+
       const fadeIn = clamp(particle.age / 0.16, 0, 1);
       const fadeOut = Math.pow(clamp(1 - particle.age / particle.life, 0, 1), 1.32);
       context.globalAlpha = fadeIn * fadeOut * particle.depth * (particle.kind === 2 ? 0.42 : 0.92);
@@ -233,6 +261,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
         context.moveTo(particle.x, particle.y);
         context.lineTo(particle.x - particle.vx * 0.035, particle.y - particle.vy * 0.035);
         context.stroke();
+        if (particle.zone) context.restore();
         return;
       }
 
@@ -250,6 +279,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
           Math.PI * 2,
         );
         context.fill();
+        if (particle.zone) context.restore();
         return;
       }
 
@@ -257,6 +287,7 @@ export default function EmberField({ lit }: { lit: boolean }) {
       context.beginPath();
       context.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
       context.fill();
+      if (particle.zone) context.restore();
     }
 
     function frame(now: number) {
@@ -339,7 +370,8 @@ export default function EmberField({ lit }: { lit: boolean }) {
         trailDistance += Math.hypot(point.x - trailLast.x, point.y - trailLast.y);
         if (trailDistance >= 120) {
           trailDistance = 0;
-          addEmber(point, 0.34);
+          const zone = zoneAt(point);
+          if (zone) addEmber(point, 0.3, zone);
           startAnimation();
         }
       }
@@ -359,10 +391,12 @@ export default function EmberField({ lit }: { lit: boolean }) {
 
       scrollDistance = 0;
       lastScrollBurst = now;
-      burstAt(
-        { x: random(width * 0.12, width * 0.88), y: random(height * 0.84, height * 0.96) },
-        isLit ? mobileQuery.matches ? 3 : 5 : mobileQuery.matches ? 2 : 3,
-        isLit ? 0.46 : 0.31,
+      const source = nearestVisibleSource();
+      if (!source) return;
+      burstFrom(
+        source,
+        isLit ? mobileQuery.matches ? 2 : 4 : mobileQuery.matches ? 1 : 2,
+        isLit ? 0.42 : 0.27,
       );
     }
 
@@ -388,12 +422,13 @@ export default function EmberField({ lit }: { lit: boolean }) {
     function onFireBurst(event: Event) {
       const detail = (event as CustomEvent<FireBurstDetail>).detail || {};
       const hasCoordinates = Number.isFinite(detail.x) && Number.isFinite(detail.y);
+      const selectedSource = detail.selector ? findElement(detail.selector) : null;
       const origin = hasCoordinates
         ? { x: detail.x as number, y: detail.y as number }
-        : detail.selector
-          ? pointFrom(findElement(detail.selector) || canvas)
+        : selectedSource
+          ? pointFrom(selectedSource)
           : { x: width / 2, y: height / 2 };
-      burstAt(origin, detail.count ?? 16, detail.intensity ?? 1);
+      burstAt(origin, detail.count ?? 16, detail.intensity ?? 1, zoneFor(selectedSource) || zoneAt(origin));
     }
 
     function onVisibilityChange() {

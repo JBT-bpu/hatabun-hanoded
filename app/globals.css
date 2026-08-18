@@ -107,11 +107,11 @@ h1, h2, h3, p { margin-top: 0; }
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  opacity: .72;
+  opacity: .64;
   transition: opacity var(--motion-state) var(--ease-state);
 }
 
-.site-is-dim .ember-field { opacity: .28; }
+.site-is-dim .ember-field { opacity: .2; }
 
 main::before,
 main::after {
@@ -2394,7 +2394,7 @@ main::after {
   }
 
   .scroll-progress { display: none; }
-  .ember-field { opacity: .58; }
+  .ember-field { opacity: .48; }
   .site-is-lit::before { opacity: calc(.76 * var(--site-heat)); }
   .site-is-lit::after { opacity: calc(.28 * var(--site-heat)); }
 
